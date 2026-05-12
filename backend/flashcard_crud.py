@@ -1,9 +1,14 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ASCENDING
 from typing import List, Optional
+from dotenv import load_dotenv
+import os
+import certifi
+
+load_dotenv()
 
 # MongoDB connection
-MONGODB_URL = "mongodb://localhost:27017"
+MONGODB_URL = os.getenv("MONGODB_URL")
 DATABASE_NAME = "flashcarddb"
 COLLECTION_NAME = "flashcards"
 
@@ -14,7 +19,7 @@ db = None
 async def connect_to_mongo():
     """Connect to MongoDB on app startup."""
     global client, db
-    client = AsyncIOMotorClient(MONGODB_URL)
+    client = AsyncIOMotorClient(MONGODB_URL, tlsCAFile=certifi.where())
     db = client[DATABASE_NAME]
     # Create collection and index if they don't exist
     await db[COLLECTION_NAME].create_index([("id", ASCENDING)], unique=True)
