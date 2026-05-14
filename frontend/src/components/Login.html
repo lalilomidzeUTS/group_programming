@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="bg-blobs">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+</div>
+
+<div class="wrapper">
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="rgba(255,255,255,0.92)"/>
+        </svg>
+      </div>
+      <span class="logo-text">KL Learnin App</span>
+    </div>
+
+    <div class="heading">Welcome back</div>
+    <div class="subheading">Sign in to continue to your workspace</div>
+
+    <form id="loginForm" novalidate>
+      <div class="field" id="emailField">
+        <label for="email">Email address</label>
+        <div class="input-wrap">
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+          <span class="input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </span>
+        </div>
+        <div class="error-msg">Please enter a valid email address.</div>
+      </div>
+
+      <div class="field" id="passField">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+          <span class="input-icon" id="eyeToggle">
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+        </div>
+        <div class="error-msg">Password must be at least 8 characters.</div>
+      </div>
+
+      <button type="submit" class="btn-primary" id="signInBtn">Sign in</button>
+    </form>
+
+    <div class="signup">Don't have an account? <a href="#">Create one</a></div>
+  </div>
+</div>
+
+<script>
+  const eyeToggle = document.getElementById('eyeToggle');
+  const passwordInput = document.getElementById('password');
+  let visible = false;
+
+  eyeToggle.addEventListener('click', () => {
+    visible = !visible;
+    passwordInput.type = visible ? 'text' : 'password';
+    eyeToggle.querySelector('svg').innerHTML = visible
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="1.6"/>'
+      : '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>';
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const pass = document.getElementById('password').value;
+    const emailField = document.getElementById('emailField');
+    const passField = document.getElementById('passField');
+    let valid = true;
+
+    emailField.classList.remove('has-error');
+    passField.classList.remove('has-error');
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { emailField.classList.add('has-error'); valid = false; }
+    if (pass.length < 8) { passField.classList.add('has-error'); valid = false; }
+
+    if (valid) {
+      const btn = document.getElementById('signInBtn');
+      btn.textContent = 'Signing in…';
+      btn.disabled = true;
+      setTimeout(() => { btn.textContent = 'Sign in'; btn.disabled = false; }, 2000);
+    }
+  });
+</script>
+
+</body>
+</html>
