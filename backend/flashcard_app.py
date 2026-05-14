@@ -15,13 +15,13 @@ import os
 from flashcard_crud import (
     connect_to_mongo,
     close_mongo_connection,
-    users_collection,
     Flashcard,
     db_get_flashcards,
     db_get_flashcard,
     db_create_flashcard,
     db_update_flashcard,
     db_delete_flashcard,
+    db_get_all_users,
 )
 
 load_dotenv()
@@ -60,17 +60,25 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+    """Returns {"username": str, "role": str}."""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        role: str = payload.get("role", "user")
         if username is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
-        return username
+        return {"username": username, "role": role}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+
+
+async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    return current_user
 
 ############################################
 # --- User Registration ---
@@ -83,7 +91,6 @@ class RegisterRequest(BaseModel):
 
 
 async def register_user(data: RegisterRequest):
-    # Import here to get the module-level variable after connect_to_mongo() has set it
     import flashcard_crud as crud
     existing = await crud.users_collection.find_one({"username": data.username})
     if existing:
@@ -101,9 +108,8 @@ async def register_user(data: RegisterRequest):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_to_mongo()
-    # Pre-populate test users
-    await register_user(RegisterRequest(username="admin@example.com", password="admin", role="admin"))
-    await register_user(RegisterRequest(username="testuser@example.com", password="testuser", role="user"))
+    await register_user(RegisterRequest(username=os.getenv("ADMIN_EMAIL"), password=os.getenv("ADMIN_PASSWORD"), role="admin"))
+    await register_user(RegisterRequest(username=os.getenv("TEST_USER_EMAIL"), password=os.getenv("TEST_USER_PASSWORD"), role="user"))
     yield
     await close_mongo_connection()
 
@@ -138,6 +144,7 @@ class FlashcardSchema(BaseModel):
     question: str
     answer: str
     isFlipped: bool = False
+    user_id: Optional[str] = None
 
 ############################################
 # --- Auth Endpoint ---
@@ -155,15 +162,16 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    role = user.get("role", "user")
     access_token = create_access_token(
-        data={"sub": form_data.username},
+        data={"sub": form_data.username, "role": role},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "username": form_data.username,
-        "role": user.get("role"),
+        "role": role,
     }
 
 ############################################
@@ -174,79 +182,92 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 async def get_all_flashcards(
     skip: int = 0,
     limit: int = 100,
-    current_user: str = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
-    try:
-        flashcards = await db_get_flashcards(skip=skip, limit=limit)
-        return [FlashcardSchema(**fc.to_dict()) for fc in flashcards]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Regular users only see their own cards
+    user_filter = None if current_user["role"] == "admin" else current_user["username"]
+    flashcards = await db_get_flashcards(user_id=user_filter, skip=skip, limit=limit)
+    return [FlashcardSchema(**fc.to_dict()) for fc in flashcards]
 
 
 @app.post("/flashcards", response_model=FlashcardSchema)
 async def create_flashcard(
     flashcard: FlashcardSchema,
-    current_user: str = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
-    try:
-        fc = Flashcard(
-            id=flashcard.id,
-            question=flashcard.question,
-            answer=flashcard.answer,
-            isFlipped=flashcard.isFlipped,
-        )
-        created = await db_create_flashcard(fc)
-        return FlashcardSchema(**created.to_dict())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    fc = Flashcard(
+        id=flashcard.id,
+        question=flashcard.question,
+        answer=flashcard.answer,
+        isFlipped=flashcard.isFlipped,
+        user_id=current_user["username"],  # always stamped from the token
+    )
+    created = await db_create_flashcard(fc)
+    return FlashcardSchema(**created.to_dict())
 
 
 @app.put("/flashcards/{flashcard_id}", response_model=FlashcardSchema)
 async def update_flashcard(
     flashcard_id: str,
     updated_object: FlashcardSchema,
-    current_user: str = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
-    try:
-        fc = Flashcard(
-            id=updated_object.id,
-            question=updated_object.question,
-            answer=updated_object.answer,
-            isFlipped=updated_object.isFlipped,
-        )
-        db_flashcard = await db_update_flashcard(flashcard_id, fc)
-        if not db_flashcard:
-            raise HTTPException(status_code=404, detail="Flashcard not found")
-        return FlashcardSchema(**db_flashcard.to_dict())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Admins can update any card; users only their own
+    owner_filter = None if current_user["role"] == "admin" else current_user["username"]
+    fc = Flashcard(
+        id=updated_object.id,
+        question=updated_object.question,
+        answer=updated_object.answer,
+        isFlipped=updated_object.isFlipped,
+        user_id=updated_object.user_id,
+    )
+    db_flashcard = await db_update_flashcard(flashcard_id, fc, user_id=owner_filter)
+    if not db_flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+    return FlashcardSchema(**db_flashcard.to_dict())
 
 
 @app.put("/flashcards/{flashcard_id}/flip", response_model=FlashcardSchema)
 async def flip_flashcard(
     flashcard_id: str,
-    current_user: str = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
-    try:
-        flashcard = await db_get_flashcard(flashcard_id)
-        if not flashcard:
-            raise HTTPException(status_code=404, detail="Flashcard not found")
-        flashcard.isFlipped = not flashcard.isFlipped
-        updated = await db_update_flashcard(flashcard_id, flashcard)
-        return FlashcardSchema(**updated.to_dict())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    flashcard = await db_get_flashcard(flashcard_id)
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+    if current_user["role"] != "admin" and flashcard.user_id != current_user["username"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to flip this flashcard")
+    flashcard.isFlipped = not flashcard.isFlipped
+    owner_filter = None if current_user["role"] == "admin" else current_user["username"]
+    updated = await db_update_flashcard(flashcard_id, flashcard, user_id=owner_filter)
+    return FlashcardSchema(**updated.to_dict())
 
 
 @app.delete("/flashcards/{flashcard_id}")
 async def delete_flashcard(
     flashcard_id: str,
-    current_user: str = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
-    try:
-        success = await db_delete_flashcard(flashcard_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="Flashcard not found")
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Admins can delete any card; users only their own
+    owner_filter = None if current_user["role"] == "admin" else current_user["username"]
+    success = await db_delete_flashcard(flashcard_id, user_id=owner_filter)
+    if not success:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+############################################
+# --- Admin Endpoints ---
+############################################
+
+@app.get("/admin/users")
+async def get_all_users(current_user: dict = Depends(require_admin)):
+    return await db_get_all_users()
+
+
+@app.get("/admin/users/{user_id}/flashcards", response_model=List[FlashcardSchema])
+async def get_user_flashcards(
+    user_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    flashcards = await db_get_flashcards(user_id=user_id)
+    return [FlashcardSchema(**fc.to_dict()) for fc in flashcards]

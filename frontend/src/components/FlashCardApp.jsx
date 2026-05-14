@@ -28,6 +28,7 @@ export default function FlashCardApp() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('role');
     setToken('');
     setUsername('');
     setFlashcards([]);
