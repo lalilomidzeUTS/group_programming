@@ -9,20 +9,23 @@ load_dotenv()
 
 # MongoDB connection
 MONGODB_URL = os.getenv("MONGODB_URL")
-DATABASE_NAME = "flashcarddb"
-COLLECTION_NAME = "flashcards"
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME")
+USERS_COLLECTION_NAME = os.getenv("USERS_COLLECTION_NAME")
 
 client: AsyncIOMotorClient = None
 db = None
+users_collection = None
 
 
 async def connect_to_mongo():
     """Connect to MongoDB on app startup."""
-    global client, db
+    global client, db, users_collection
     client = AsyncIOMotorClient(MONGODB_URL, tlsCAFile=certifi.where())
     db = client[DATABASE_NAME]
     # Create collection and index if they don't exist
     await db[COLLECTION_NAME].create_index([("id", ASCENDING)], unique=True)
+    users_collection = db[USERS_COLLECTION_NAME]
     print(f"Connected to MongoDB: {DATABASE_NAME}")
 
 
