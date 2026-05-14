@@ -1,0 +1,323 @@
+* {
+  box-sizing: border-box;
+}
+
+.admin-container {
+  display: flex;
+  height: 100vh;
+  background: #1a1628;
+  color: #ede9fb;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ---- Sidebar ---- */
+
+.admin-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-sidebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e8e2f8;
+  letter-spacing: -0.3px;
+}
+
+.admin-logout-btn {
+  padding: 6px 14px;
+  background: rgba(240, 128, 128, 0.12);
+  border: 1px solid rgba(240, 128, 128, 0.25);
+  border-radius: 8px;
+  color: #f08080;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.admin-logout-btn:hover {
+  background: rgba(240, 128, 128, 0.22);
+}
+
+.admin-user-list {
+  list-style: none;
+  padding: 10px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.admin-user-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  gap: 8px;
+}
+
+.admin-user-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-user-item.active {
+  background: rgba(124, 85, 224, 0.15);
+  border-left-color: #7c55e0;
+}
+
+.admin-user-name {
+  font-size: 14px;
+  color: rgba(220, 210, 245, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-user-item.active .admin-user-name {
+  color: #c4aff5;
+  font-weight: 600;
+}
+
+.admin-you-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #7c55e0;
+  background: rgba(124, 85, 224, 0.18);
+  border: 1px solid rgba(124, 85, 224, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* ---- Main panel ---- */
+
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-main-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 28px 32px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.admin-main-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ede9fb;
+  letter-spacing: -0.3px;
+}
+
+.admin-card-count {
+  font-size: 13px;
+  color: rgba(200, 185, 235, 0.45);
+}
+
+.admin-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(200, 185, 235, 0.35);
+  font-size: 15px;
+}
+
+/* ---- Card list ---- */
+
+.admin-card-list {
+  list-style: none;
+  padding: 20px 32px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-card-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+
+.admin-card-item:hover {
+  border-color: rgba(124, 85, 224, 0.3);
+}
+
+/* ---- Flashcard flip ---- */
+
+.admin-flashcard {
+  flex: 1;
+  cursor: pointer;
+  perspective: 1000px;
+  min-height: 72px;
+}
+
+.admin-flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 72px;
+  transform-style: preserve-3d;
+  transition: transform 0.45s ease;
+}
+
+.admin-flashcard.flipped .admin-flashcard-inner {
+  transform: rotateY(180deg);
+}
+
+.admin-flashcard-front,
+.admin-flashcard-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-flashcard-back {
+  transform: rotateY(180deg);
+}
+
+.admin-flashcard-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(180, 165, 215, 0.4);
+}
+
+.admin-flashcard-text {
+  font-size: 15px;
+  color: #ede9fb;
+  line-height: 1.4;
+}
+
+/* ---- Actions ---- */
+
+.admin-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.admin-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.admin-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.admin-icon-btn.edit {
+  background: rgba(124, 85, 224, 0.12);
+  border-color: rgba(124, 85, 224, 0.2);
+  color: #9d7fe0;
+}
+
+.admin-icon-btn.edit:hover:not(:disabled) {
+  background: rgba(124, 85, 224, 0.22);
+}
+
+.admin-icon-btn.delete {
+  background: rgba(240, 128, 128, 0.1);
+  border-color: rgba(240, 128, 128, 0.2);
+  color: #f08080;
+}
+
+.admin-icon-btn.delete:hover:not(:disabled) {
+  background: rgba(240, 128, 128, 0.2);
+}
+
+.admin-icon-btn.save {
+  background: rgba(80, 200, 140, 0.12);
+  border-color: rgba(80, 200, 140, 0.2);
+  color: #50c88c;
+}
+
+.admin-icon-btn.save:hover {
+  background: rgba(80, 200, 140, 0.22);
+}
+
+.admin-icon-btn.cancel {
+  background: rgba(240, 128, 128, 0.1);
+  border-color: rgba(240, 128, 128, 0.2);
+  color: #f08080;
+}
+
+.admin-icon-btn.cancel:hover {
+  background: rgba(240, 128, 128, 0.2);
+}
+
+/* ---- Edit mode ---- */
+
+.admin-edit-mode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.admin-edit-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.admin-edit-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: #ede9fb;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-edit-input:focus {
+  border-color: rgba(124, 85, 224, 0.5);
+  box-shadow: 0 0 0 3px rgba(124, 85, 224, 0.12);
+}
