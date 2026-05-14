@@ -1,10 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Check, X, Edit2 } from 'lucide-react';
 import './FlashCardApp.css';
 
 const API_URL = 'http://localhost:8000';
 
 export default function FlashCardApp() {
+  // --- AUTHENTICATION STATE ---
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [username, setUsername] = useState(localStorage.getItem('username'));
+
+  const navigate = useNavigate();
+
   // --- STATE INITIALIZATION ---
   const [flashcards, setFlashcards] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,11 +24,24 @@ export default function FlashCardApp() {
   // --- REFS FOR User Experience ---
   const inputRef = useRef(null);
 
+  // --- LOGOUT ---
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    setToken('');
+    setUsername('');
+    setFlashcards([]);
+    navigate('/login', { replace: true });
+  };
+
   // --- EFFECTS ---
   // Fetch flashcards from server on initial mount
   useEffect(() => {
-    fetchFlashcards();
-  }, []);
+    if (token) {
+      fetchFlashcards();
+      inputRef.current?.focus();
+    }
+  }, [token]);
 
   // Update browser tab title when flashcards change
   useEffect(() => {
@@ -29,22 +49,18 @@ export default function FlashCardApp() {
     document.title = title;
   }, [flashcards]);
 
-  // Focus the input field on initial mount for better user experience
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
   // --- API FUNCTIONS ---
   const fetchFlashcards = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/flashcards`);
+      const response = await fetch(`${API_URL}/flashcards`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
       if (!response.ok) throw new Error('Failed to fetch flashcards');
       const data = await response.json();
       setFlashcards(data);
     } catch (error) {
       console.error('Error fetching flashcards:', error);
-      // Fallback to empty array if server is down
       setFlashcards([]);
     } finally {
       setLoading(false);
@@ -65,6 +81,7 @@ export default function FlashCardApp() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(newCard),
       });
@@ -93,6 +110,7 @@ export default function FlashCardApp() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -113,6 +131,7 @@ export default function FlashCardApp() {
       try {
         const response = await fetch(`${API_URL}/flashcards/${id}`, {
           method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` },
         });
 
         if (!response.ok) throw new Error('Failed to delete flashcard');
@@ -144,6 +163,7 @@ export default function FlashCardApp() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify(updatedCard),
         });
@@ -174,6 +194,9 @@ export default function FlashCardApp() {
       <div className="app-wrapper">
         <div className="header">
           <h1 className="header-title">My Flashcards</h1>
+          <span className={`status-badge ${token ? 'online' : 'offline'}`}>
+            {token ? `● Connected as ${username}` : '● Offline'}
+          </span>
         </div>
 
         {loading ? (
@@ -208,6 +231,7 @@ export default function FlashCardApp() {
                 <Plus size={20} />
                 Add
               </button>
+              <button className="cancel-button" onClick={handleLogout}>Logout</button>
             </div>
 
             <div className="todo-list">
