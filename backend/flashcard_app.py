@@ -147,6 +147,30 @@ class FlashcardSchema(BaseModel):
     user_id: Optional[str] = None
 
 ############################################
+# --- Public Registration Endpoint ---
+############################################
+
+class PublicRegisterRequest(BaseModel):
+    fullname: str
+    username: str
+    password: str
+
+
+@app.post("/register", status_code=201)
+async def public_register(data: PublicRegisterRequest):
+    import flashcard_crud as crud
+    existing = await crud.users_collection.find_one({"username": data.username})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    await crud.users_collection.insert_one({
+        "fullname": data.fullname,
+        "username": data.username,
+        "password": get_password_hash(data.password),
+        "role": "user",
+    })
+    return {"message": "Account created successfully"}
+
+############################################
 # --- Auth Endpoint ---
 ############################################
 
