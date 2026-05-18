@@ -10,112 +10,53 @@
  
 <div class="app-container">
 <div class="app-wrapper">
- 
+
   <div class="header">
     <h1>KL <span>Learning App</span></h1>
     <p>Study smarter, remember more</p>
   </div>
  
-  <div class="tabs">
-    <button class="tab-btn active" id="tabCards">My Cards</button>
-    <button class="tab-btn" id="tabStudy">Study</button>
-    <button class="tab-btn" id="tabHistory">History</button>
+  <div class="input-section">
+    <input type="text" id="questionInput" placeholder="Question...">
+    <input type="text" id="answerInput" placeholder="Answer...">
+    <button id="addBtn">+ Add Card</button>
   </div>
  
-
-  <div id="pageCards">
+  <input type="text" id="searchInput" class="search-box" placeholder="Search cards...">
  
-    <div id="editLabel" class="edit-label">Editing card</div>
+  <div id="emptyCards" class="empty-state" style="display:none">No flashcards yet. Add one above!</div>
  
-    <div class="input-section" id="inputSection">
-      <input type="text" id="questionInput" placeholder="Question...">
-      <input type="text" id="answerInput"   placeholder="Answer...">
-      <button id="addBtn">+ Add</button>
-      <button id="cancelBtn" class="btn-cancel" style="display:none">✕</button>
-    </div>
- 
-    <input type="text" id="searchInput" class="search-box" placeholder="Search cards...">
- 
-    <div id="cardList"></div>
- 
-    <div id="emptyCards" class="empty-state" style="display:none">
-      No flashcards yet. Add one above!
-    </div>
- 
-    <div id="statsBar" class="stats"></div>
- 
-  </div>
- 
-  <div id="pageStudy" style="display:none">
- 
-    <div id="studyIdle">
-      <div class="study-idle-header">
-        You have <strong id="studyCount">0</strong> card<span id="cardPlural">s</span> ready to study.
-      </div>
- 
-      <div class="center-btn">
-        <button id="startStudyBtn" class="btn-primary">Start Studying</button>
-      </div>
- 
-      <div id="studyEmpty" class="empty-state" style="display:none">
-        Add some cards first!
-      </div>
-    </div>
- 
-    <div id="studySession" style="display:none">
- 
-      <p id="progressLabel"></p>
-      <div class="progress-bg">
-        <div id="progressFill" class="progress-fill" style="width:0%"></div>
-      </div>
- 
-      <div id="flashcardBox" class="flashcard-box">
-        <div class="flashcard-inner">
-          <div class="flashcard-front"><span id="cardQuestion"></span></div>
-          <div class="flashcard-back"><span id="cardAnswer"></span></div>
-        </div>
-      </div>
- 
-      <p id="flipHint" class="flip-hint">Click card to flip</p>
- 
-      <div class="study-controls">
-        <button id="btnPrev" class="btn-secondary">← Prev</button>
-        <button id="btnFlip" class="btn-primary">Flip</button>
-        <button id="btnNext" class="btn-secondary">Next →</button>
-      </div>
- 
-      <div class="center-btn">
-        <button id="btnEnd" class="btn-ghost">End Session</button>
-      </div>
- 
-    </div>
- 
-    <div id="studyDone" class="session-done" style="display:none">
-      <h2>🎉 Session Complete!</h2>
-      <p id="doneSummary"></p>
-      <button id="btnStudyAgain" class="btn-primary">Study Again</button>
-    </div>
- 
-  </div>
- 
-  <div id="pageHistory" style="display:none">
-    <div id="historyList"></div>
-    <div id="emptyHistory" class="empty-state" style="display:none">
-      No study sessions yet.
-    </div>
+  <div id="studySection" style="display:none">
+    <div id="flashcardList"></div>
   </div>
  
 </div>
+</div>
+ 
+<div id="modalOverlay" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Edit Card</h3>
+      <button id="modalClose" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Question</label>
+      <input type="text" id="editQuestion" placeholder="Enter question...">
+      <label>Answer</label>
+      <input type="text" id="editAnswer" placeholder="Enter answer...">
+    </div>
+    <div class="modal-footer">
+      <button id="modalCancel" class="btn-ghost">Cancel</button>
+      <button id="modalSave" class="btn-primary">Save Changes</button>
+    </div>
+  </div>
 </div>
  
 <div id="toast" class="toast"></div>
  
 <script>
 
-function getCards()    { return JSON.parse(localStorage.getItem("fl_cards"))   || []; }
-function saveCards(c)  { localStorage.setItem("fl_cards",   JSON.stringify(c)); }
-function getHistory()  { return JSON.parse(localStorage.getItem("fl_history")) || []; }
-function saveHistory(h){ localStorage.setItem("fl_history", JSON.stringify(h)); }
+var cards = [];
  
 var toastTimer;
 function showToast(msg) {
@@ -123,252 +64,155 @@ function showToast(msg) {
     t.textContent = msg;
     t.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
-}
- 
-document.getElementById("tabCards").onclick   = () => showTab("pageCards",   "tabCards");
-document.getElementById("tabStudy").onclick   = () => { showTab("pageStudy",  "tabStudy");   loadStudyIdle(); };
-document.getElementById("tabHistory").onclick = () => { showTab("pageHistory","tabHistory"); loadHistory(); };
- 
-function showTab(page, tab) {
-    ["pageCards","pageStudy","pageHistory"].forEach(id =>
-        document.getElementById(id).style.display = "none");
-    ["tabCards","tabStudy","tabHistory"].forEach(id =>
-        document.getElementById(id).classList.remove("active"));
-    document.getElementById(page).style.display = "block";
-    document.getElementById(tab).classList.add("active");
-}
- 
-function renderCards() {
-    var cards  = getCards();
-    var search = document.getElementById("searchInput").value.toLowerCase().trim();
-    var list   = document.getElementById("cardList");
-    list.innerHTML = "";
- 
-    var filtered = search
-        ? cards.filter(c =>
-            c.q.toLowerCase().includes(search) ||
-            c.a.toLowerCase().includes(search))
-        : cards;
- 
-    var empty = document.getElementById("emptyCards");
-    if (filtered.length === 0) {
-        empty.style.display = "block";
-        empty.textContent   = search ? "No cards match your search." : "No flashcards yet. Add one above!";
-        document.getElementById("statsBar").textContent = "";
-        return;
-    }
-    empty.style.display = "none";
- 
-    filtered.forEach(card => {
-        var div = document.createElement("div");
-        div.className = "card-item";
-        div.id = "card-" + card.id;
- 
-        div.innerHTML =
-            "<div class='card-view'>" +
-                "<div class='card-texts'>" +
-                    "<p class='card-question'>" + escHtml(card.q) + "</p>" +
-                    "<p class='card-answer'>"   + escHtml(card.a) + "</p>" +
-                "</div>" +
-                "<div class='card-actions'>" +
-                    "<button class='icon-btn edit'   title='Edit'>✏️</button>" +
-                    "<button class='icon-btn delete' title='Delete'>🗑</button>" +
-                "</div>" +
-            "</div>";
- 
-        div.querySelector(".edit").onclick   = () => beginEdit(card.id);
-        div.querySelector(".delete").onclick = () => deleteCard(card.id);
- 
-        list.appendChild(div);
-    });
- 
-    var total = cards.length;
-    document.getElementById("statsBar").textContent =
-        total === 1 ? "1 card total" : total + " cards total";
+    toastTimer = setTimeout(function() { t.classList.remove("show"); }, 2200);
 }
  
 function escHtml(str) {
-    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 }
  
-var editingId = null;
+function renderCards() {
+    var search = document.getElementById("searchInput").value.toLowerCase().trim();
+ 
+    var filtered = search
+        ? cards.filter(function(c) {
+            return c.q.toLowerCase().includes(search);
+          })
+        : cards;
+ 
+    var empty = document.getElementById("emptyCards");
+    var section = document.getElementById("studySection");
+ 
+    if (filtered.length === 0) {
+        empty.style.display = "block";
+        empty.textContent = search
+            ? "No cards match your search."
+            : "No flashcards yet. Add one above!";
+        section.style.display = "none";
+    } else {
+        empty.style.display = "none";
+        section.style.display = "block";
+ 
+        var list = document.getElementById("flashcardList");
+        list.innerHTML = "";
+ 
+        filtered.forEach(function(card) {
+
+            var wrapper = document.createElement("div");
+            wrapper.className = "fc-wrapper";
+ 
+
+            var box = document.createElement("div");
+            box.className = "fc-box";
+            box.innerHTML =
+                "<div class='fc-inner'>" +
+                    "<div class='fc-front'>" +
+                        "<span class='fc-label'>Question</span>" +
+                        "<span class='fc-text'>" + escHtml(card.q) + "</span>" +
+                    "</div>" +
+                    "<div class='fc-back'>" +
+                        "<span class='fc-label'>Answer</span>" +
+                        "<span class='fc-text'>" + escHtml(card.a) + "</span>" +
+                        "<div class='fc-actions'>" +
+                            "<button class='fc-edit-btn' title='Edit'>✏️ Edit</button>" +
+                            "<button class='fc-delete-btn' title='Delete'>🗑 Delete</button>" +
+                        "</div>" +
+                    "</div>" +
+                "</div>";
+ 
+            box.onclick = function() {
+                box.classList.toggle("flipped");
+            };
+ 
+            box.querySelector(".fc-edit-btn").onclick = function(e) {
+                e.stopPropagation();
+                openEditModal(card.id);
+            };
+            box.querySelector(".fc-delete-btn").onclick = function(e) {
+                e.stopPropagation();
+                deleteCard(card.id);
+            };
+ 
+            wrapper.appendChild(box);
+            list.appendChild(wrapper);
+        });
+    }
+}
  
 function addCard() {
     var q = document.getElementById("questionInput").value.trim();
     var a = document.getElementById("answerInput").value.trim();
     if (!q || !a) return showToast("Please fill in both fields.");
  
-    if (editingId !== null) {
-        var cards = getCards().map(c =>
-            c.id === editingId ? { id: c.id, q, a } : c);
-        saveCards(cards);
-        cancelEdit();
-        renderCards();
-        showToast("Card updated ✓");
-    } else {
-        var cards = getCards();
-        cards.push({ id: Date.now(), q, a });
-        saveCards(cards);
-        document.getElementById("questionInput").value = "";
-        document.getElementById("answerInput").value   = "";
-        renderCards();
-        showToast("Card added ✓");
-        document.getElementById("questionInput").focus();
-    }
-}
- 
-function beginEdit(id) {
-    var card = getCards().find(c => c.id === id);
-    if (!card) return;
- 
-    editingId = id;
-    document.getElementById("questionInput").value = card.q;
-    document.getElementById("answerInput").value   = card.a;
-    document.getElementById("addBtn").textContent  = "Save";
-    document.getElementById("cancelBtn").style.display = "inline-block";
-    document.getElementById("editLabel").classList.add("visible");
-    document.getElementById("inputSection").classList.add("edit-mode");
- 
-    document.querySelectorAll(".card-item").forEach(el => el.classList.remove("editing"));
-    var el = document.getElementById("card-" + id);
-    if (el) { el.classList.add("editing"); el.scrollIntoView({ behavior:"smooth", block:"nearest" }); }
- 
+    cards.push({ id: Date.now(), q: q, a: a });
+    document.getElementById("questionInput").value = "";
+    document.getElementById("answerInput").value   = "";
+    renderCards();
+    showToast("Card added ✓");
     document.getElementById("questionInput").focus();
 }
  
-function cancelEdit() {
-    editingId = null;
-    document.getElementById("questionInput").value = "";
-    document.getElementById("answerInput").value   = "";
-    document.getElementById("addBtn").textContent  = "+ Add";
-    document.getElementById("cancelBtn").style.display = "none";
-    document.getElementById("editLabel").classList.remove("visible");
-    document.getElementById("inputSection").classList.remove("edit-mode");
-    document.querySelectorAll(".card-item").forEach(el => el.classList.remove("editing"));
+var editingId = null;
+ 
+function openEditModal(id) {
+    var card = cards.find(function(c) { return c.id === id; });
+    if (!card) return;
+    editingId = id;
+    document.getElementById("editQuestion").value = card.q;
+    document.getElementById("editAnswer").value   = card.a;
+    document.getElementById("modalOverlay").style.display = "flex";
+    setTimeout(function() {
+        document.getElementById("editQuestion").focus();
+    }, 50);
 }
  
-document.getElementById("cancelBtn").onclick = cancelEdit;
+function closeEditModal() {
+    editingId = null;
+    document.getElementById("modalOverlay").style.display = "none";
+}
+ 
+function saveEdit() {
+    var q = document.getElementById("editQuestion").value.trim();
+    var a = document.getElementById("editAnswer").value.trim();
+    if (!q || !a) return showToast("Please fill in both fields.");
+    cards = cards.map(function(c) {
+        return c.id === editingId ? { id: c.id, q: q, a: a } : c;
+    });
+    closeEditModal();
+    renderCards();
+    showToast("Card updated ✓");
+}
+ 
+document.getElementById("modalSave").onclick   = saveEdit;
+document.getElementById("modalCancel").onclick = closeEditModal;
+document.getElementById("modalClose").onclick  = closeEditModal;
+document.getElementById("modalOverlay").onclick = function(e) {
+    if (e.target === this) closeEditModal();
+};
+document.getElementById("editQuestion").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") document.getElementById("editAnswer").focus();
+});
+document.getElementById("editAnswer").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") saveEdit();
+});
  
 function deleteCard(id) {
-    if (editingId === id) cancelEdit();
-    saveCards(getCards().filter(c => c.id !== id));
+    cards = cards.filter(function(c) { return c.id !== id; });
     renderCards();
     showToast("Card deleted");
 }
  
-document.getElementById("questionInput").addEventListener("keydown", e => {
+document.getElementById("questionInput").addEventListener("keydown", function(e) {
     if (e.key === "Enter") document.getElementById("answerInput").focus();
 });
-document.getElementById("answerInput").addEventListener("keydown", e => {
+document.getElementById("answerInput").addEventListener("keydown", function(e) {
     if (e.key === "Enter") addCard();
 });
 document.getElementById("addBtn").onclick      = addCard;
 document.getElementById("searchInput").oninput = renderCards;
- 
-var studyCards = [];
-var studyIndex = 0;
- 
-function loadStudyIdle() {
-    var count = getCards().length;
-    document.getElementById("studyCount").textContent  = count;
-    document.getElementById("cardPlural").textContent  = count === 1 ? "" : "s";
-    document.getElementById("startStudyBtn").disabled  = (count === 0);
-    document.getElementById("studyEmpty").style.display   = count === 0 ? "block" : "none";
-    document.getElementById("studyIdle").style.display    = "block";
-    document.getElementById("studySession").style.display = "none";
-    document.getElementById("studyDone").style.display    = "none";
-}
- 
-function startStudy() {
-    studyCards = getCards();
-    if (studyCards.length === 0) return;
-    studyIndex = 0;
- 
-    document.getElementById("studyIdle").style.display    = "none";
-    document.getElementById("studySession").style.display = "block";
-    document.getElementById("studyDone").style.display    = "none";
- 
-    showStudyCard();
-}
- 
-function showStudyCard() {
-    var card = studyCards[studyIndex];
-    document.getElementById("cardQuestion").textContent = card.q;
-    document.getElementById("cardAnswer").textContent   = card.a;
-    document.getElementById("flashcardBox").classList.remove("flipped");
-    document.getElementById("flipHint").style.display  = "block";
- 
-    var pct = ((studyIndex + 1) / studyCards.length) * 100;
-    document.getElementById("progressFill").style.width  = pct + "%";
-    document.getElementById("progressLabel").textContent =
-        "Card " + (studyIndex + 1) + " of " + studyCards.length;
- 
-    document.getElementById("btnPrev").disabled = (studyIndex === 0);
-    document.getElementById("btnNext").disabled = (studyIndex === studyCards.length - 1);
-}
- 
-function flipCard() {
-    document.getElementById("flashcardBox").classList.toggle("flipped");
-    document.getElementById("flipHint").style.display = "none";
-}
- 
-document.getElementById("btnFlip").onclick      = flipCard;
-document.getElementById("flashcardBox").onclick = flipCard;
- 
-document.getElementById("btnNext").onclick = () => {
-    if (studyIndex < studyCards.length - 1) { studyIndex++; showStudyCard(); }
-};
- 
-document.getElementById("btnPrev").onclick = () => {
-    if (studyIndex > 0) { studyIndex--; showStudyCard(); }
-};
- 
-document.getElementById("startStudyBtn").onclick = startStudy;
-document.getElementById("btnStudyAgain").onclick  = startStudy;
- 
-document.getElementById("btnEnd").onclick = function endSession() {
-    var history = getHistory();
-    history.push({
-        date:    new Date().toLocaleString(),
-        total:   studyCards.length,
-        reached: studyIndex + 1
-    });
-    saveHistory(history);
- 
-    document.getElementById("studySession").style.display = "none";
-    document.getElementById("studyDone").style.display    = "block";
-    document.getElementById("doneSummary").textContent =
-        "You reviewed " + (studyIndex + 1) + " of " + studyCards.length + " cards.";
- 
-    showToast("Session saved ✓");
-};
- 
-function loadHistory() {
-    var history = getHistory();
-    var list    = document.getElementById("historyList");
-    list.innerHTML = "";
- 
-    if (history.length === 0) {
-        document.getElementById("emptyHistory").style.display = "block";
-        return;
-    }
-    document.getElementById("emptyHistory").style.display = "none";
- 
-    [...history].reverse().forEach((h, i) => {
-        var div = document.createElement("div");
-        div.className = "history-item";
-        div.innerHTML =
-            "<div>" +
-                "<h4>Session #" + (history.length - i) + "</h4>" +
-                "<p>" + h.date + "</p>" +
-            "</div>" +
-            "<div class='history-badge'>" +
-                (h.reached || h.total) + " / " + h.total + " cards" +
-            "</div>";
-        list.appendChild(div);
-    });
-}
  
 renderCards();
 </script>
