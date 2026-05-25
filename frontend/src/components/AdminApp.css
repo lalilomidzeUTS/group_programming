@@ -465,6 +465,7 @@ body { /* base page styles */
 
 .content .history-row h4 { font-size: 13px; color: #fff; margin-bottom: 3px; } /* event type heading */
 .content .history-date { font-size: 11px; color: #6a6b99; } /* event timestamp text */
+.content .admin-action-note { font-size: 11px; color: #f8c87e; font-weight: bold; margin-top: 3px; } /* amber label shown when an admin performed the action */
 
 .content .hist-badge { /* event type badge pill */
   font-size: 11px; /* small label */

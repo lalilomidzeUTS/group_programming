@@ -537,6 +537,13 @@ body { /* base page styles */
     color: #6a6b99; /* muted */
 }
 
+.app-wrapper .history-item .admin-action-note { /* shown when an admin edited or deleted a user's card */
+    font-size: 11px; /* smaller than normal body text */
+    color: #f8c87e; /* amber/orange to stand out from the muted grey date */
+    font-weight: bold; /* bold so it catches the eye */
+    margin-top: 3px; /* small gap below the date */
+}
+
 .app-wrapper .history-badge { /* event type badge pill */
     background: #4F517D; /* default purple (overridden per type below) */
     color: #fff; /* white text */

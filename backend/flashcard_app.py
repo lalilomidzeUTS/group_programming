@@ -280,6 +280,7 @@ async def update_flashcard(  # route handler for updating a flashcard
         await db_log_history({  # record an "edit" event only when meaningful content changed
             "type": "edit",  # event type label
             "user_id": old_card.user_id,  # owner of the card
+            "performed_by": current_user["username"],  # who made the edit (differs from user_id when an admin edits the card)
             "cardId": flashcard_id,  # which card was edited
             "date": datetime.now(timezone.utc).isoformat(),  # UTC timestamp of the edit
             "oldQ": old_card.question,  # the question text before the edit
@@ -304,6 +305,7 @@ async def delete_flashcard(  # route handler for deleting a flashcard
         await db_log_history({  # record a "delete" event for the audit trail
             "type": "delete",  # event type label
             "user_id": card.user_id,  # owner of the deleted card
+            "performed_by": current_user["username"],  # who deleted the card (differs from user_id when an admin deletes the card)
             "cardId": flashcard_id,  # which card was deleted
             "date": datetime.now(timezone.utc).isoformat(),  # UTC timestamp of the deletion
             "q": card.question,  # snapshot of the question that was deleted

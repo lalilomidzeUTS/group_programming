@@ -145,7 +145,7 @@ export default function AdminApp() { // the admin dashboard component; displays 
         return (
           <div key={i} className="history-item"> {/* unique key required by React for list items */}
             <div className="history-row"> {/* flex row with event title and badge */}
-              <div><h4>Card Created</h4><div className="history-date">{new Date(event.date).toLocaleString()}</div></div> {/* event title and formatted timestamp */}
+              <div><h4>Card Created by User</h4><div className="history-date">{new Date(event.date).toLocaleString()}</div></div> {/* event title and formatted timestamp */}
               <span className="hist-badge hb-create">Created</span> {/* green "Created" badge */}
             </div>
             <div className="history-detail det-create"> {/* card snapshot with green left border */}
@@ -156,10 +156,17 @@ export default function AdminApp() { // the admin dashboard component; displays 
         );
       }
       if (event.type === 'delete') { // card deletion event
+        const deletedByAdmin = event.performed_by && event.performed_by !== event.user_id; // true when an admin (not the card owner) performed the deletion
         return (
           <div key={i} className="history-item">
             <div className="history-row">
-              <div><h4>Card Deleted</h4><div className="history-date">{new Date(event.date).toLocaleString()}</div></div> {/* deletion event title and timestamp */}
+              <div>
+                <h4>{deletedByAdmin ? 'Card Deleted by Admin' : 'Card Deleted by User'}</h4> {/* title reflects who performed the action */}
+                <div className="history-date">{new Date(event.date).toLocaleString()}</div> {/* deletion event timestamp */}
+                {deletedByAdmin && ( // show the admin's email for a full audit trail
+                  <div className="admin-action-note">{event.performed_by}</div>
+                )}
+              </div>
               <span className="hist-badge hb-delete">Deleted</span> {/* red "Deleted" badge */}
             </div>
             <div className="history-detail det-delete"> {/* card snapshot with red left border */}
@@ -169,10 +176,17 @@ export default function AdminApp() { // the admin dashboard component; displays 
           </div>
         );
       }
+      const editedByAdmin = event.performed_by && event.performed_by !== event.user_id; // true when an admin (not the card owner) performed the edit
       return ( // card edit event (default branch)
         <div key={i} className="history-item">
           <div className="history-row">
-            <div><h4>Card Edited</h4><div className="history-date">{new Date(event.date).toLocaleString()}</div></div> {/* edit event title and timestamp */}
+            <div>
+              <h4>{editedByAdmin ? 'Card Edited by Admin' : 'Card Edited by User'}</h4> {/* title reflects who performed the action */}
+              <div className="history-date">{new Date(event.date).toLocaleString()}</div> {/* edit event timestamp */}
+              {editedByAdmin && ( // show the admin's email for a full audit trail
+                <div className="admin-action-note">{event.performed_by}</div>
+              )}
+            </div>
             <span className="hist-badge hb-edit">Edited</span> {/* purple "Edited" badge */}
           </div>
           <div className="history-detail det-edit"> {/* before/after snapshot with purple left border */}

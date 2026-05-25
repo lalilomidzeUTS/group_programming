@@ -160,7 +160,7 @@ export default function FlashCardApp() { // main flashcard management page shown
         return (
           <div key={i} className="history-item"> {/* keyed by index since events have no stable id */}
             <div className="history-item-row"> {/* flex row with title/date on the left and badge on the right */}
-              <div><h4>Card Created</h4><p className="history-date">{new Date(event.date).toLocaleString()}</p></div> {/* event title and formatted date */}
+              <div><h4>Card Created by User</h4><p className="history-date">{new Date(event.date).toLocaleString()}</p></div> {/* event title and formatted date */}
               <span className="history-badge badge-create">Created</span> {/* green badge */}
             </div>
             <div className="history-card-detail detail-create"> {/* card snapshot with green left border */}
@@ -171,10 +171,17 @@ export default function FlashCardApp() { // main flashcard management page shown
         );
       }
       if (event.type === 'delete') { // card deletion event
+        const deletedByAdmin = event.performed_by && event.performed_by !== event.user_id; // true when an admin (not the card owner) deleted this card
         return (
           <div key={i} className="history-item">
             <div className="history-item-row">
-              <div><h4>Card Deleted</h4><p className="history-date">{new Date(event.date).toLocaleString()}</p></div> {/* deletion event title and date */}
+              <div>
+                <h4>{deletedByAdmin ? 'Card Deleted by Admin' : 'Card Deleted by User'}</h4> {/* title reflects who performed the action */}
+                <p className="history-date">{new Date(event.date).toLocaleString()}</p> {/* deletion event date */}
+                {deletedByAdmin && ( // show the admin's email so the user knows exactly who deleted the card
+                  <p className="admin-action-note">{event.performed_by}</p>
+                )}
+              </div>
               <span className="history-badge badge-delete">Deleted</span> {/* red badge */}
             </div>
             <div className="history-card-detail detail-delete"> {/* deleted card snapshot with red left border */}
@@ -185,10 +192,17 @@ export default function FlashCardApp() { // main flashcard management page shown
         );
       }
       if (event.type === 'edit') { // card edit event
+        const editedByAdmin = event.performed_by && event.performed_by !== event.user_id; // true when an admin (not the card owner) edited this card
         return (
           <div key={i} className="history-item">
             <div className="history-item-row">
-              <div><h4>Card Edited</h4><p className="history-date">{new Date(event.date).toLocaleString()}</p></div> {/* edit event title and date */}
+              <div>
+                <h4>{editedByAdmin ? 'Card Edited by Admin' : 'Card Edited by User'}</h4> {/* title reflects who performed the action */}
+                <p className="history-date">{new Date(event.date).toLocaleString()}</p> {/* edit event date */}
+                {editedByAdmin && ( // show the admin's email so the user knows exactly who edited the card
+                  <p className="admin-action-note">{event.performed_by}</p>
+                )}
+              </div>
               <span className="history-badge badge-edit">Edited</span> {/* purple badge */}
             </div>
             <div className="history-card-detail detail-edit"> {/* before/after snapshot with purple left border */}
