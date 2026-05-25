@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminApp.css';
-
-const API_URL = 'http://localhost:8000';
+import { API_URL } from '../config';
+import { getErrorMessage, logout } from '../utils';
 
 const AVATAR_COLORS = [
   { bg: '#3f4278', color: '#c8caff' },
@@ -56,11 +56,6 @@ export default function AdminApp() {
     setToast({ message: msg, visible: true });
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2400);
-  };
-
-  const getErrorMessage = async (res) => {
-    if (res.status === 503) return 'Database unavailable. Please try again later.';
-    try { const data = await res.json(); return data.detail || 'Something went wrong.'; } catch { return 'Something went wrong.'; }
   };
 
   const fetchUserHistory = async (userId) => {
@@ -119,12 +114,7 @@ export default function AdminApp() {
     } catch { showToast('Could not reach the server.'); }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('role');
-    navigate('/login', { replace: true });
-  };
+  const handleLogout = () => logout(navigate);
 
   const filteredUsers = userSearch
     ? users.filter((u) => u.toLowerCase().includes(userSearch.toLowerCase()))

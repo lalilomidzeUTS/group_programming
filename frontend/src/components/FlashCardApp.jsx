@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './FlashCardApp.css';
-
-const API_URL = 'http://localhost:8000';
+import { API_URL } from '../config';
+import { getErrorMessage, logout } from '../utils';
 
 export default function FlashCardApp() {
   const [token] = useState(localStorage.getItem('token'));
@@ -40,17 +40,7 @@ export default function FlashCardApp() {
     toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2200);
   };
 
-  const getErrorMessage = async (res) => {
-    if (res.status === 503) return 'Database unavailable. Please try again later.';
-    try { const data = await res.json(); return data.detail || 'Something went wrong.'; } catch { return 'Something went wrong.'; }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('role');
-    navigate('/login', { replace: true });
-  };
+  const handleLogout = () => logout(navigate);
 
   const fetchHistory = async () => {
     try {

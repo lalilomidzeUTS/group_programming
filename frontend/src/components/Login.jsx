@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
-
-const LOGIN_URL = 'http://127.0.0.1:8000/token';
+import { API_URL } from '../config';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: false, password: false });
+  const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -20,13 +20,14 @@ const Login = () => {
     setErrors({ email: emailInvalid, password: passwordInvalid });
     if (emailInvalid || passwordInvalid) return;
 
+    setServerError('');
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append('username', credentials.username);
       formData.append('password', credentials.password);
 
-      const response = await fetch(LOGIN_URL, { method: 'POST', body: formData });
+      const response = await fetch(`${API_URL}/token`, { method: 'POST', body: formData });
       const data = await response.json();
 
       if (response.ok) {
@@ -35,10 +36,10 @@ const Login = () => {
         localStorage.setItem('role', data.role);
         navigate(data.role === 'admin' ? '/admin' : '/');
       } else {
-        alert(data.detail || 'Login failed. Please check your credentials.');
+        setServerError(data.detail || 'Login failed. Please check your credentials.');
       }
     } catch {
-      alert('Server connection error.');
+      setServerError('Server connection error.');
     } finally {
       setLoading(false);
     }
@@ -83,6 +84,7 @@ const Login = () => {
           </div>
           {errors.password && <p className="error" style={{ display: 'block' }}>Password must be at least 6 characters.</p>}
 
+          {serverError && <p className="error" style={{ display: 'block' }}>{serverError}</p>}
           <button type="submit" className="submit-btn" disabled={loading}>
             {loading ? 'Signing in…' : 'Sign In'}
           </button>

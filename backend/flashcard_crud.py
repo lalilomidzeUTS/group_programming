@@ -16,15 +16,17 @@ HISTORY_COLLECTION_NAME = os.getenv("HISTORY_COLLECTION_NAME", "history")
 
 client: AsyncIOMotorClient = None
 db = None
+flashcards_collection = None
 users_collection = None
 history_collection = None
 
 
 async def connect_to_mongo():
-    global client, db, users_collection, history_collection
+    global client, db, flashcards_collection, users_collection, history_collection
     client = AsyncIOMotorClient(MONGODB_URL, tlsCAFile=certifi.where())
     db = client[DATABASE_NAME]
-    await db[COLLECTION_NAME].create_index([("id", ASCENDING)], unique=True)
+    flashcards_collection = db[COLLECTION_NAME]
+    await flashcards_collection.create_index([("id", ASCENDING)], unique=True)
     users_collection = db[USERS_COLLECTION_NAME]
     history_collection = db[HISTORY_COLLECTION_NAME]
     print(f"Connected to MongoDB: {DATABASE_NAME}")
@@ -68,14 +70,12 @@ class Flashcard:
 # CRUD operations
 
 async def db_create_flashcard(flashcard: "Flashcard") -> "Flashcard":
-    collection = db[COLLECTION_NAME]
-    await collection.insert_one(flashcard.to_dict())
+    await flashcards_collection.insert_one(flashcard.to_dict())
     return flashcard
 
 
 async def db_get_flashcard(flashcard_id: str) -> Optional["Flashcard"]:
-    collection = db[COLLECTION_NAME]
-    data = await collection.find_one({"id": flashcard_id})
+    data = await flashcards_collection.find_one({"id": flashcard_id})
     if data:
         data.pop("_id", None)  # MongoDB auto-adds _id; remove it before mapping to our schema
         return Flashcard.from_dict(data)
@@ -84,9 +84,8 @@ async def db_get_flashcard(flashcard_id: str) -> Optional["Flashcard"]:
 
 async def db_get_flashcards(user_id: str = None, skip: int = 0, limit: int = 100) -> List["Flashcard"]:
     """Fetch flashcards. Pass user_id to filter by owner; omit for all cards (admin)."""
-    collection = db[COLLECTION_NAME]
     query = {"user_id": user_id} if user_id else {}
-    cursor = collection.find(query).skip(skip).limit(limit)
+    cursor = flashcards_collection.find(query).skip(skip).limit(limit)
     flashcards = []
     async for data in cursor:
         data.pop("_id", None)  # MongoDB auto-adds _id; remove it before mapping to our schema
@@ -96,11 +95,10 @@ async def db_get_flashcards(user_id: str = None, skip: int = 0, limit: int = 100
 
 async def db_update_flashcard(flashcard_id: str, flashcard_update: "Flashcard", user_id: str = None) -> Optional["Flashcard"]:
     """Update a flashcard. Pass user_id to enforce ownership; omit for admin updates."""
-    collection = db[COLLECTION_NAME]
     query = {"id": flashcard_id}
     if user_id:
         query["user_id"] = user_id
-    result = await collection.update_one(query, {"$set": flashcard_update.to_dict()})
+    result = await flashcards_collection.update_one(query, {"$set": flashcard_update.to_dict()})
     if result.matched_count == 0:
         return None
     return await db_get_flashcard(flashcard_id)
@@ -108,11 +106,10 @@ async def db_update_flashcard(flashcard_id: str, flashcard_update: "Flashcard", 
 
 async def db_delete_flashcard(flashcard_id: str, user_id: str = None) -> bool:
     """Delete a flashcard. Pass user_id to enforce ownership; omit for admin deletes."""
-    collection = db[COLLECTION_NAME]
     query = {"id": flashcard_id}
     if user_id:
         query["user_id"] = user_id
-    result = await collection.delete_one(query)
+    result = await flashcards_collection.delete_one(query)
     return result.deleted_count > 0
 
 

@@ -85,6 +85,11 @@ async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return current_user
 
+
+def get_owner_filter(current_user: dict) -> str | None:
+    """Returns None for admins (bypasses ownership check) or the username for regular users."""
+    return None if current_user["role"] == "admin" else current_user["username"]
+
 ############################################
 # --- User Registration ---
 ############################################
@@ -223,7 +228,7 @@ async def get_all_flashcards(
     current_user: dict = Depends(get_current_user),
 ):
     # Passing None to db_get_flashcards omits the user_id filter, returning all cards (admin only)
-    user_filter = None if current_user["role"] == "admin" else current_user["username"]
+    user_filter = get_owner_filter(current_user)
     flashcards = await db_get_flashcards(user_id=user_filter, skip=skip, limit=limit)
     return [FlashcardSchema(**fc.to_dict()) for fc in flashcards]
 
@@ -258,8 +263,7 @@ async def update_flashcard(
     updated_object: FlashcardSchema,
     current_user: dict = Depends(get_current_user),
 ):
-    # None bypasses ownership check in the DB layer, allowing admins to edit any card
-    owner_filter = None if current_user["role"] == "admin" else current_user["username"]
+    owner_filter = get_owner_filter(current_user)
     old_card = await db_get_flashcard(flashcard_id)
     fc = Flashcard(
         id=updated_object.id,
@@ -286,28 +290,12 @@ async def update_flashcard(
     return FlashcardSchema(**db_flashcard.to_dict())
 
 
-@app.put("/flashcards/{flashcard_id}/flip", response_model=FlashcardSchema)
-async def flip_flashcard(
-    flashcard_id: str,
-    current_user: dict = Depends(get_current_user),
-):
-    flashcard = await db_get_flashcard(flashcard_id)
-    if not flashcard:
-        raise HTTPException(status_code=404, detail="Flashcard not found")
-    if current_user["role"] != "admin" and flashcard.user_id != current_user["username"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to flip this flashcard")
-    flashcard.isFlipped = not flashcard.isFlipped
-    owner_filter = None if current_user["role"] == "admin" else current_user["username"]
-    updated = await db_update_flashcard(flashcard_id, flashcard, user_id=owner_filter)
-    return FlashcardSchema(**updated.to_dict())
-
-
 @app.delete("/flashcards/{flashcard_id}")
 async def delete_flashcard(
     flashcard_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    owner_filter = None if current_user["role"] == "admin" else current_user["username"]
+    owner_filter = get_owner_filter(current_user)
     card = await db_get_flashcard(flashcard_id)
     success = await db_delete_flashcard(flashcard_id, user_id=owner_filter)
     if not success:

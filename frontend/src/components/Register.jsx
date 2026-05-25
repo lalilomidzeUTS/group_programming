@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
-
-const REGISTER_URL = 'http://127.0.0.1:8000/register';
+import { API_URL } from '../config';
 
 const Register = () => {
   const [form, setForm] = useState({ fullname: '', email: '', password: '', confirmPassword: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({ name: false, email: false, password: false, confirm: false });
+  const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -24,9 +24,10 @@ const Register = () => {
     setErrors({ name: nameInvalid, email: emailInvalid, password: passwordInvalid, confirm: confirmInvalid });
     if (nameInvalid || emailInvalid || passwordInvalid || confirmInvalid) return;
 
+    setServerError('');
     setLoading(true);
     try {
-      const response = await fetch(REGISTER_URL, {
+      const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fullname: form.fullname, username: form.email, password: form.password }),
@@ -36,10 +37,10 @@ const Register = () => {
       if (response.ok) {
         navigate('/login');
       } else {
-        alert(data.detail || 'Registration failed.');
+        setServerError(data.detail || 'Registration failed.');
       }
     } catch {
-      alert('Server connection error.');
+      setServerError('Server connection error.');
     } finally {
       setLoading(false);
     }
@@ -109,6 +110,7 @@ const Register = () => {
           </div>
           {errors.confirm && <p className="error" style={{ display: 'block' }}>Passwords do not match.</p>}
 
+          {serverError && <p className="error" style={{ display: 'block' }}>{serverError}</p>}
           <button type="submit" className="submit-btn" disabled={loading}>
             {loading ? 'Creating account…' : 'Create Account'}
           </button>
