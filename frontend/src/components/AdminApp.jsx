@@ -34,7 +34,7 @@ export default function AdminApp() {
   const [toast, setToast] = useState({ message: '', visible: false });
   const toastTimer = useRef(null);
 
-  const token = localStorage.getItem('token');
+  const [token] = useState(localStorage.getItem('token'));
   const navigate = useNavigate();
   const authHeaders = { Authorization: `Bearer ${token}` };
 
@@ -55,25 +55,33 @@ export default function AdminApp() {
     toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2400);
   };
 
+  const getErrorMessage = async (res) => {
+    if (res.status === 503) return 'Database unavailable. Please try again later.';
+    try { const data = await res.json(); return data.detail || 'Something went wrong.'; } catch { return 'Something went wrong.'; }
+  };
+
   const fetchUserHistory = async (userId) => {
     try {
       const res = await fetch(`${API_URL}/admin/users/${encodeURIComponent(userId)}/history`, { headers: authHeaders });
       if (res.ok) setUserHistory(await res.json());
-    } catch { /* silently ignore */ }
+      else showToast(await getErrorMessage(res));
+    } catch { showToast('Could not reach the server.'); }
   };
 
   const fetchUsers = async () => {
     try {
       const res = await fetch(`${API_URL}/admin/users`, { headers: authHeaders });
-      setUsers(await res.json());
-    } catch { alert('Failed to load users.'); }
+      if (res.ok) setUsers(await res.json());
+      else showToast(await getErrorMessage(res));
+    } catch { showToast('Could not reach the server.'); }
   };
 
   const fetchFlashcards = async (userId) => {
     try {
       const res = await fetch(`${API_URL}/admin/users/${encodeURIComponent(userId)}/flashcards`, { headers: authHeaders });
-      setFlashcards(await res.json());
-    } catch { alert('Failed to load flashcards.'); }
+      if (res.ok) setFlashcards(await res.json());
+      else showToast(await getErrorMessage(res));
+    } catch { showToast('Could not reach the server.'); }
   };
 
   const startEdit = (card) => {
@@ -90,12 +98,9 @@ export default function AdminApp() {
         headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ ...card, question: editQuestion.trim(), answer: editAnswer.trim() }),
       });
-      if (res.ok) {
-        fetchFlashcards(selectedUser);
-        setEditingId(null);
-        showToast('Card updated');
-      }
-    } catch { alert('Failed to save edit.'); }
+      if (res.ok) { fetchFlashcards(selectedUser); setEditingId(null); showToast('Card updated'); }
+      else showToast(await getErrorMessage(res));
+    } catch { showToast('Could not reach the server.'); }
   };
 
   const deleteCard = async (id) => {
@@ -106,11 +111,9 @@ export default function AdminApp() {
         method: 'DELETE',
         headers: authHeaders,
       });
-      if (res.ok) {
-        fetchFlashcards(selectedUser);
-        showToast('Card deleted');
-      }
-    } catch { alert('Failed to delete card.'); }
+      if (res.ok) { fetchFlashcards(selectedUser); showToast('Card deleted'); }
+      else showToast(await getErrorMessage(res));
+    } catch { showToast('Could not reach the server.'); }
   };
 
   const handleLogout = () => {
@@ -128,7 +131,7 @@ export default function AdminApp() {
   const deleteCount = userHistory.filter((h) => h.type === 'delete').length;
 
   const renderHistoryTab = () => {
-    const events = userHistory.filter((h) => ['create', 'edit', 'delete'].includes(h.type)).slice().reverse();
+    const events = userHistory.filter((h) => ['create', 'edit', 'delete'].includes(h.type));
     if (events.length === 0) {
       return <div className="empty-state">No history recorded for this user.</div>;
     }
@@ -189,12 +192,7 @@ export default function AdminApp() {
         </div>
         <div className="topbar-right">
           <span className="admin-badge">● ADMIN</span>
-          <button
-            onClick={handleLogout}
-            style={{ background: 'none', border: '1px solid #4f517d', color: '#9a9de0', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Verdana, sans-serif' }}
-          >
-            Logout
-          </button>
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
         </div>
       </div>
 
@@ -252,15 +250,13 @@ export default function AdminApp() {
             <>
               <div className="user-header">
                 <div className="user-header-left">
+                  {(() => { const ac = getAvatarColor(users.indexOf(selectedUser)); return (
                   <div
                     className="user-header-avatar"
-                    style={{
-                      background: getAvatarColor(users.indexOf(selectedUser)).bg,
-                      color: getAvatarColor(users.indexOf(selectedUser)).color,
-                    }}
+                    style={{ background: ac.bg, color: ac.color }}
                   >
                     {getInitials(selectedUser)}
-                  </div>
+                  </div>); })()}
                   <div className="user-header-info">
                     <h2>{selectedUser}</h2>
                   </div>

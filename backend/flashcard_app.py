@@ -2,16 +2,19 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends, Response, status
+from fastapi import FastAPI, HTTPException, Depends, Response, status, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
+from pymongo.errors import PyMongoError
 
 import bcrypt
 import jwt
 from dotenv import load_dotenv
 import os
 
+import flashcard_crud as crud
 from flashcard_crud import (
     connect_to_mongo,
     close_mongo_connection,
@@ -93,7 +96,6 @@ class RegisterRequest(BaseModel):
 
 
 async def register_user(data: RegisterRequest):
-    import flashcard_crud as crud
     existing = await crud.users_collection.find_one({"username": data.username})
     if existing:
         return
@@ -109,14 +111,26 @@ async def register_user(data: RegisterRequest):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await connect_to_mongo()
-    await register_user(RegisterRequest(username=os.getenv("ADMIN_EMAIL"), password=os.getenv("ADMIN_PASSWORD"), role="admin"))
-    await register_user(RegisterRequest(username=os.getenv("TEST_USER_EMAIL"), password=os.getenv("TEST_USER_PASSWORD"), role="user"))
+    try:
+        await connect_to_mongo()
+        await register_user(RegisterRequest(username=os.getenv("ADMIN_EMAIL"), password=os.getenv("ADMIN_PASSWORD"), role="admin"))
+        await register_user(RegisterRequest(username=os.getenv("TEST_USER_EMAIL"), password=os.getenv("TEST_USER_PASSWORD"), role="user"))
+    except PyMongoError as e:
+        print(f"WARNING: Could not connect to database on startup: {e}")
+        print("The server will start but all database operations will fail until the database is available.")
     yield
     await close_mongo_connection()
 
 
 app = FastAPI(title="Flashcard API", lifespan=lifespan)
+
+
+@app.exception_handler(PyMongoError)
+async def pymongo_exception_handler(request: Request, exc: PyMongoError):
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "Database unavailable. Please try again later."},
+    )
 
 ############################################
 # --- CORS ---
@@ -160,7 +174,6 @@ class PublicRegisterRequest(BaseModel):
 
 @app.post("/register", status_code=201)
 async def public_register(data: PublicRegisterRequest):
-    import flashcard_crud as crud
     existing = await crud.users_collection.find_one({"username": data.username})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -178,7 +191,6 @@ async def public_register(data: PublicRegisterRequest):
 
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    import flashcard_crud as crud
     user = await crud.users_collection.find_one({"username": form_data.username})
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
@@ -308,6 +320,7 @@ async def delete_flashcard(
             "a": card.answer,
         })
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 @app.get("/history")
 async def get_history(current_user: dict = Depends(get_current_user)):

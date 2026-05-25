@@ -557,6 +557,7 @@ body {
 
 .app-wrapper .history-card-detail .detail-q { color: #b0b3e8; margin-bottom: 2px; }
 .app-wrapper .history-card-detail .detail-a { color: #7ec87e; }
+.app-wrapper .detail-section-label { font-size: 11px; color: #6a6b99; text-transform: uppercase; letter-spacing: 1px; margin: 5px 0; }
 
 .app-wrapper .detail-label {
     font-size: 10px;

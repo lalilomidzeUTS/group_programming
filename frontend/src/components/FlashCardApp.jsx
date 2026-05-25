@@ -11,22 +11,18 @@ export default function FlashCardApp() {
   const [flashcards, setFlashcards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('cards');
+  const [history, setHistory] = useState([]);
 
-  // Add/Edit form
   const [questionInput, setQuestionInput] = useState('');
   const [answerInput, setAnswerInput] = useState('');
   const [editingId, setEditingId] = useState(null);
-  const [editingOldCard, setEditingOldCard] = useState(null);
 
-  // Search
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Toast
   const [toast, setToast] = useState({ message: '', visible: false });
   const toastTimer = useRef(null);
 
-  // Study mode
-  const [studyPhase, setStudyPhase] = useState('idle'); // 'idle' | 'session' | 'done'
+  const [studyPhase, setStudyPhase] = useState('idle');
   const [studyCards, setStudyCards] = useState([]);
   const [studyIndex, setStudyIndex] = useState(0);
   const [studyFlipped, setStudyFlipped] = useState(false);
@@ -35,22 +31,18 @@ export default function FlashCardApp() {
   const navigate = useNavigate();
   const authHeaders = { Authorization: `Bearer ${token}` };
 
-  const [history, setHistory] = useState([]);
-
   useEffect(() => { fetchFlashcards(); }, []);
   useEffect(() => { document.title = `Flashcards (${flashcards.length} cards)`; }, [flashcards]);
-
-  const fetchHistory = async () => {
-    try {
-      const res = await fetch(`${API_URL}/history`, { headers: authHeaders });
-      if (res.ok) setHistory(await res.json());
-    } catch { /* silently ignore */ }
-  };
 
   const showToast = (msg) => {
     setToast({ message: msg, visible: true });
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2200);
+  };
+
+  const getErrorMessage = async (res) => {
+    if (res.status === 503) return 'Database unavailable. Please try again later.';
+    try { const data = await res.json(); return data.detail || 'Something went wrong.'; } catch { return 'Something went wrong.'; }
   };
 
   const handleLogout = () => {
@@ -60,14 +52,27 @@ export default function FlashCardApp() {
     navigate('/login', { replace: true });
   };
 
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch(`${API_URL}/history`, { headers: authHeaders });
+      if (res.ok) setHistory(await res.json());
+      else showToast(await getErrorMessage(res));
+    } catch { showToast('Could not reach the server.'); }
+  };
+
   const fetchFlashcards = async () => {
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/flashcards`, { headers: authHeaders });
-      if (!res.ok) throw new Error();
-      setFlashcards(await res.json());
+      if (res.ok) {
+        setFlashcards(await res.json());
+      } else {
+        setFlashcards([]);
+        showToast(await getErrorMessage(res));
+      }
     } catch {
       setFlashcards([]);
+      showToast('Could not reach the server.');
     } finally {
       setLoading(false);
     }
@@ -86,12 +91,9 @@ export default function FlashCardApp() {
           headers: { 'Content-Type': 'application/json', ...authHeaders },
           body: JSON.stringify({ ...card, question: q, answer: a }),
         });
-        if (res.ok) {
-          cancelEdit();
-          fetchFlashcards();
-          showToast('Card updated');
-        }
-      } catch { showToast('Failed to update card.'); }
+        if (res.ok) { cancelEdit(); fetchFlashcards(); showToast('Card updated'); }
+        else showToast(await getErrorMessage(res));
+      } catch { showToast('Could not reach the server.'); }
     } else {
       try {
         const newId = Date.now().toString();
@@ -100,19 +102,14 @@ export default function FlashCardApp() {
           headers: { 'Content-Type': 'application/json', ...authHeaders },
           body: JSON.stringify({ id: newId, question: q, answer: a, isFlipped: false }),
         });
-        if (res.ok) {
-          setQuestionInput('');
-          setAnswerInput('');
-          fetchFlashcards();
-          showToast('Card added');
-        }
-      } catch { showToast('Failed to add card.'); }
+        if (res.ok) { setQuestionInput(''); setAnswerInput(''); fetchFlashcards(); showToast('Card added'); }
+        else showToast(await getErrorMessage(res));
+      } catch { showToast('Could not reach the server.'); }
     }
   };
 
   const beginEdit = (card) => {
     setEditingId(card.id);
-    setEditingOldCard(card);
     setQuestionInput(card.question);
     setAnswerInput(card.answer);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -120,24 +117,20 @@ export default function FlashCardApp() {
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditingOldCard(null);
     setQuestionInput('');
     setAnswerInput('');
   };
 
   const deleteFlashcard = async (id) => {
-    const card = flashcards.find((c) => c.id === id);
     if (editingId === id) cancelEdit();
     try {
       const res = await fetch(`${API_URL}/flashcards/${id}`, {
         method: 'DELETE',
         headers: authHeaders,
       });
-      if (res.ok) {
-        fetchFlashcards();
-        showToast('Card deleted');
-      }
-    } catch { showToast('Failed to delete card.'); }
+      if (res.ok) { fetchFlashcards(); showToast('Card deleted'); }
+      else showToast(await getErrorMessage(res));
+    } catch { showToast('Could not reach the server.'); }
   };
 
   const filteredCards = flashcards.filter((card) => {
@@ -205,10 +198,10 @@ export default function FlashCardApp() {
               <span className="history-badge badge-edit">Edited</span>
             </div>
             <div className="history-card-detail detail-edit">
-              <div style={{ fontSize: '11px', color: '#6a6b99', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>Before</div>
+              <div className="detail-section-label">Before</div>
               <div className="detail-q"><span className="detail-label ql">Q</span>{h.oldQ}</div>
               <div className="detail-a"><span className="detail-label al">A</span>{h.oldA}</div>
-              <div style={{ fontSize: '11px', color: '#6a6b99', margin: '7px 0 5px', textTransform: 'uppercase', letterSpacing: '1px' }}>After</div>
+              <div className="detail-section-label">After</div>
               <div className="detail-q"><span className="detail-label ql">Q</span>{h.newQ}</div>
               <div className="detail-a"><span className="detail-label al">A</span>{h.newA}</div>
             </div>
@@ -354,7 +347,7 @@ export default function FlashCardApp() {
                   </div>
                 </div>
 
-                {!studyFlipped && <p className="flip-hint">Click card to flip</p>}
+                <p className="flip-hint">Click card to flip</p>
 
                 <div className="study-controls">
                   <button className="btn-secondary" onClick={() => { setStudyIndex((i) => i - 1); setStudyFlipped(false); }} disabled={studyIndex === 0}>← Prev</button>
