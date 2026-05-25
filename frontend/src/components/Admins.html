@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KL Admin Dashboard</title>
+<link rel="stylesheet" href="Admins.css">
+</head>
+<body>
+ 
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>KL <span>Admin Dashboard</span></h1>
+    <p>Manage all registered users and their flashcards</p>
+  </div>
+  <div class="topbar-right">
+    <span class="admin-badge">&#9679; ADMIN</span>
+ 
+  </div>
+</div>
+ 
+<div class="dashboard">
+ 
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <h2>Registered Users</h2>
+      <input type="text" class="user-search" id="userSearch" placeholder="Search users..." oninput="filterUsers()">
+      <div class="user-count" id="userCountLabel"></div>
+    </div>
+    <div class="user-list" id="userList"></div>
+  </div>
+ 
+  <div class="main" id="mainPanel">
+ 
+    <div class="no-user" id="noUser">
+      <div class="icon">&#128100;</div>
+      <p>Select a user to manage their flashcards</p>
+    </div>
+ 
+    <div id="userHeader" style="display:none">
+ 
+      <div class="user-header">
+        <div class="user-header-left">
+          <div class="user-header-avatar" id="headerAvatar"></div>
+          <div class="user-header-info">
+            <h2 id="headerName"></h2>
+            <p id="headerMeta"></p>
+          </div>
+        </div>
+        <div class="stats-row" id="statsRow"></div>
+      </div>
+ 
+      <div class="tabs">
+        <button class="tab-btn active" id="tabFlashcards" onclick="switchTab('flashcards')">&#9632; Flashcards</button>
+        <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">&#9632; History</button>
+      </div>
+ 
+      <div class="content" id="tabContent"></div>
+ 
+    </div>
+ 
+  </div>
+</div>
+ 
+<div class="toast" id="toast"></div>
+ 
+<script>
+ 
+function getUsers() {
+  return JSON.parse(localStorage.getItem('fl_users')) || [];
+}
+ 
+function saveUsers(u) {
+  localStorage.setItem('fl_users', JSON.stringify(u));
+}
+ 
+function getCardsFor(username) {
+  return JSON.parse(localStorage.getItem('fl_cards_' + username)) || [];
+}
+ 
+function saveCardsFor(username, cards) {
+  localStorage.setItem('fl_cards_' + username, JSON.stringify(cards));
+}
+ 
+function getHistoryFor(username) {
+  return JSON.parse(localStorage.getItem('fl_history_' + username)) || [];
+}
+ 
+function saveHistoryFor(username, history) {
+  localStorage.setItem('fl_history_' + username, JSON.stringify(history));
+}
+ 
+function logEventFor(username, type, data) {
+  var h = getHistoryFor(username);
+  h.push(Object.assign({ type: type, date: new Date().toLocaleString() }, data));
+  saveHistoryFor(username, h);
+}
+ 
+function migrateExistingData() {
+  var users = getUsers();
+  var existing = JSON.parse(localStorage.getItem('fl_cards'));
+  if (existing && existing.length > 0) {
+    var alreadyMigrated = users.find(function(u) { return u.id === '__default__'; });
+    if (!alreadyMigrated) {
+      users.push({ id: '__default__', name: 'Default User', createdAt: new Date().toLocaleString() });
+      saveUsers(users);
+      localStorage.setItem('fl_cards___default__', localStorage.getItem('fl_cards'));
+      var existingHist = localStorage.getItem('fl_history');
+      if (existingHist) {
+        localStorage.setItem('fl_history___default__', existingHist);
+      }
+    }
+  }
+ 
+ 
+}
+ 
+var selectedUserId = null;
+var currentTab = 'flashcards';
+var toastTimer;
+ 
+var AVATAR_COLORS = [
+  { bg: '#3f4278', color: '#c8caff' },
+  { bg: '#2e3a2e', color: '#7ec87e' },
+  { bg: '#3a2e4a', color: '#c87ef8' },
+  { bg: '#2e3a4a', color: '#7ec8f8' },
+  { bg: '#4a3a2e', color: '#f8c87e' },
+  { bg: '#4a2e3a', color: '#f87ec8' }
+];
+ 
+function getAvatarColor(idx) {
+  return AVATAR_COLORS[idx % AVATAR_COLORS.length];
+}
+ 
+function getInitials(name) {
+  return name.split(' ').map(function(w) { return w[0]; }).join('').toUpperCase().slice(0, 2);
+}
+ 
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+ 
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2400);
+}
+ 
+function filterUsers() {
+  var q = document.getElementById('userSearch').value.toLowerCase().trim();
+  renderSidebar(q);
+}
+ 
+function renderSidebar(filter) {
+  filter = filter || '';
+  var users = getUsers();
+  var filtered = filter
+    ? users.filter(function(u) { return u.name.toLowerCase().includes(filter); })
+    : users;
+ 
+  var list  = document.getElementById('userList');
+  var label = document.getElementById('userCountLabel');
+  list.innerHTML = '';
+ 
+  label.textContent = users.length + ' user' + (users.length !== 1 ? 's' : '') + ' registered';
+ 
+  if (users.length === 0) {
+    list.innerHTML = '<div class="no-users-msg">No users registered yet.<br>They appear here once someone uses the app.</div>';
+    return;
+  }
+ 
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-users-msg">No users match your search.</div>';
+    return;
+  }
+ 
+  filtered.forEach(function(user) {
+    var globalIdx = users.indexOf(user);
+    var ac    = getAvatarColor(globalIdx);
+    var cards = getCardsFor(user.id);
+    var div   = document.createElement('div');
+    div.className = 'user-item' + (selectedUserId === user.id ? ' active' : '');
+    div.innerHTML =
+      '<div class="user-avatar" style="background:' + ac.bg + ';color:' + ac.color + '">' +
+        getInitials(user.name) +
+      '</div>' +
+      '<div class="user-info">' +
+        '<div class="uname">' + escHtml(user.name) + '</div>' +
+        '<div class="umeta">' + cards.length + ' card' + (cards.length !== 1 ? 's' : '') + '</div>' +
+      '</div>';
+    div.onclick = function() { selectUser(user.id); };
+    list.appendChild(div);
+  });
+}
+ 
+function selectUser(userId) {
+  selectedUserId = userId;
+  currentTab = 'flashcards';
+ 
+  renderSidebar(document.getElementById('userSearch').value.toLowerCase().trim());
+ 
+  var users = getUsers();
+  var user  = users.find(function(u) { return u.id === userId; });
+  if (!user) return;
+ 
+  var globalIdx   = users.indexOf(user);
+  var ac          = getAvatarColor(globalIdx);
+  var cards       = getCardsFor(userId);
+  var history     = getHistoryFor(userId);
+  var editCount   = history.filter(function(h) { return h.type === 'edit'; }).length;
+  var deleteCount = history.filter(function(h) { return h.type === 'delete'; }).length;
+ 
+  document.getElementById('noUser').style.display     = 'none';
+  document.getElementById('userHeader').style.display = 'block';
+ 
+  var av = document.getElementById('headerAvatar');
+  av.textContent      = getInitials(user.name);
+  av.style.background = ac.bg;
+  av.style.color      = ac.color;
+ 
+  document.getElementById('headerName').textContent = user.name;
+  document.getElementById('headerMeta').textContent = 'Member since ' + (user.createdAt || 'unknown');
+ 
+  document.getElementById('statsRow').innerHTML =
+    '<div class="stat-box"><div class="snum">' + cards.length + '</div><div class="slbl">Cards</div></div>' +
+    '<div class="stat-box"><div class="snum">' + editCount    + '</div><div class="slbl">Edits</div></div>' +
+    '<div class="stat-box"><div class="snum">' + deleteCount  + '</div><div class="slbl">Deleted</div></div>';
+ 
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('tabFlashcards').classList.add('active');
+ 
+  renderFlashcardsTab();
+}
+ 
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  if (tab === 'flashcards') renderFlashcardsTab();
+  else renderHistoryTab();
+}
+ 
+function renderFlashcardsTab() {
+  if (!selectedUserId) return;
+  var cards   = getCardsFor(selectedUserId);
+  var content = document.getElementById('tabContent');
+  var html    = '';
+ 
+  if (cards.length === 0) {
+    html = '<div class="empty-state">No flashcards for this user.</div>';
+  } else {
+    cards.forEach(function(card) {
+      html +=
+        '<div class="card-item" id="card-' + card.id + '">' +
+          '<div class="card-texts" id="card-view-' + card.id + '">' +
+            '<div class="card-field"><span class="field-label ql">Q</span><span class="card-q-text">' + escHtml(card.q) + '</span></div>' +
+            '<div class="card-field"><span class="field-label al">A</span><span class="card-a-text">' + escHtml(card.a) + '</span></div>' +
+          '</div>' +
+          '<div class="card-texts" id="card-edit-' + card.id + '" style="display:none">' +
+            '<input class="inline-edit-input" id="editQ-' + card.id + '" value="' + escHtml(card.q) + '">' +
+            '<input class="inline-edit-input" id="editA-' + card.id + '" value="' + escHtml(card.a) + '">' +
+          '</div>' +
+          '<div class="card-actions" id="card-actions-' + card.id + '">' +
+            '<button class="btn-edit" onclick="beginEdit(' + card.id + ')">Edit</button>' +
+            '<button class="btn-del"  onclick="deleteCard(' + card.id + ')">Delete</button>' +
+          '</div>' +
+          '<div class="card-actions" id="card-save-actions-' + card.id + '" style="display:none">' +
+            '<button class="btn-save"        onclick="saveEdit(' + card.id + ')">Save</button>' +
+            '<button class="btn-cancel-edit" onclick="cancelEdit(' + card.id + ')">&#x2715;</button>' +
+          '</div>' +
+        '</div>';
+    });
+  }
+ 
+  content.innerHTML = html;
+}
+ 
+function beginEdit(id) {
+  document.getElementById('card-view-' + id).style.display         = 'none';
+  document.getElementById('card-edit-' + id).style.display         = 'block';
+  document.getElementById('card-actions-' + id).style.display      = 'none';
+  document.getElementById('card-save-actions-' + id).style.display = 'flex';
+  document.getElementById('card-' + id).classList.add('editing');
+  document.getElementById('editQ-' + id).focus();
+}
+ 
+function cancelEdit(id) {
+  document.getElementById('card-view-' + id).style.display         = 'block';
+  document.getElementById('card-edit-' + id).style.display         = 'none';
+  document.getElementById('card-actions-' + id).style.display      = 'flex';
+  document.getElementById('card-save-actions-' + id).style.display = 'none';
+  document.getElementById('card-' + id).classList.remove('editing');
+}
+ 
+function saveEdit(id) {
+  if (!selectedUserId) return;
+  var q = document.getElementById('editQ-' + id).value.trim();
+  var a = document.getElementById('editA-' + id).value.trim();
+  if (!q || !a) { showToast('Please fill in both fields.'); return; }
+  var cards = getCardsFor(selectedUserId);
+  var card  = cards.find(function(c) { return c.id === id; });
+  if (!card) return;
+  logEventFor(selectedUserId, 'edit', { cardId: id, oldQ: card.q, oldA: card.a, newQ: q, newA: a });
+  card.q = q;
+  card.a = a;
+  saveCardsFor(selectedUserId, cards);
+  showToast('Card updated');
+  refreshStats();
+  renderFlashcardsTab();
+}
+ 
+function deleteCard(id) {
+  if (!selectedUserId) return;
+  var cards = getCardsFor(selectedUserId);
+  var card  = cards.find(function(c) { return c.id === id; });
+  if (card) logEventFor(selectedUserId, 'delete', { cardId: id, q: card.q, a: card.a });
+  saveCardsFor(selectedUserId, cards.filter(function(c) { return c.id !== id; }));
+  showToast('Card deleted');
+  refreshStats();
+  renderFlashcardsTab();
+}
+ 
+function refreshStats() {
+  if (!selectedUserId) return;
+  var cards       = getCardsFor(selectedUserId);
+  var history     = getHistoryFor(selectedUserId);
+  var editCount   = history.filter(function(h) { return h.type === 'edit'; }).length;
+  var deleteCount = history.filter(function(h) { return h.type === 'delete'; }).length;
+  document.getElementById('statsRow').innerHTML =
+    '<div class="stat-box"><div class="snum">' + cards.length + '</div><div class="slbl">Cards</div></div>' +
+    '<div class="stat-box"><div class="snum">' + editCount    + '</div><div class="slbl">Edits</div></div>' +
+    '<div class="stat-box"><div class="snum">' + deleteCount  + '</div><div class="slbl">Deleted</div></div>';
+  renderSidebar(document.getElementById('userSearch').value.toLowerCase().trim());
+}
+ 
+function renderHistoryTab() {
+  if (!selectedUserId) return;
+  var history = getHistoryFor(selectedUserId);
+  var content = document.getElementById('tabContent');
+ 
+  var events = history.filter(function(h) {
+    return h.type === 'edit' || h.type === 'delete';
+  }).slice().reverse();
+ 
+  if (events.length === 0) {
+    content.innerHTML = '<div class="empty-state">No edits or deletions recorded for this user.</div>';
+    return;
+  }
+ 
+  var html = '';
+ 
+  events.forEach(function(h) {
+    if (h.type === 'delete') {
+      html +=
+        '<div class="history-item">' +
+          '<div class="history-row">' +
+            '<div><h4>Card Deleted</h4><div class="history-date">' + h.date + '</div></div>' +
+            '<span class="hist-badge hb-delete">Deleted</span>' +
+          '</div>' +
+          '<div class="history-detail det-delete">' +
+            '<div class="det-row"><span class="field-label ql">Q</span><span class="det-q">' + escHtml(h.q || '') + '</span></div>' +
+            '<div class="det-row"><span class="field-label al">A</span><span class="det-a">' + escHtml(h.a || '') + '</span></div>' +
+          '</div>' +
+        '</div>';
+    } else if (h.type === 'edit') {
+      html +=
+        '<div class="history-item">' +
+          '<div class="history-row">' +
+            '<div><h4>Card Edited</h4><div class="history-date">' + h.date + '</div></div>' +
+            '<span class="hist-badge hb-edit">Edited</span>' +
+          '</div>' +
+          '<div class="history-detail det-edit">' +
+            '<div class="det-section-label">Before</div>' +
+            '<div class="det-row"><span class="field-label ql">Q</span><span class="det-q">' + escHtml(h.oldQ || '') + '</span></div>' +
+            '<div class="det-row"><span class="field-label al">A</span><span class="det-a">' + escHtml(h.oldA || '') + '</span></div>' +
+            '<div class="det-section-label">After</div>' +
+            '<div class="det-row"><span class="field-label ql">Q</span><span class="det-q">' + escHtml(h.newQ || '') + '</span></div>' +
+            '<div class="det-row"><span class="field-label al">A</span><span class="det-a">' + escHtml(h.newA || '') + '</span></div>' +
+          '</div>' +
+        '</div>';
+    }
+  });
+ 
+  content.innerHTML = html;
+}
+ 
+migrateExistingData();
+renderSidebar();
+ 
+</script>
+</body>
+</html>
