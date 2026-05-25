@@ -1,13 +1,13 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+<!doctype html> <!-- declare HTML5 document type so browsers use standards mode rendering -->
+<html lang="en"> <!-- root HTML element; lang="en" tells screen readers and search engines the page language is English -->
+  <head> <!-- head section contains metadata that is not displayed on the page -->
+    <meta charset="UTF-8" /> <!-- set the character encoding to UTF-8 so all Unicode characters render correctly -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> <!-- link the browser tab icon (favicon) as an SVG file served from the public folder -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /> <!-- make the layout responsive: match the device's screen width and start at 1x zoom on mobile -->
+    <title>frontend</title> <!-- set the browser tab title; React will override this dynamically via document.title when the app loads -->
   </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+  <body> <!-- body section contains the visible page content -->
+    <div id="root"></div> <!-- empty container div; React mounts the entire application into this element via createRoot in main.jsx -->
+    <script type="module" src="/src/main.jsx"></script> <!-- load the app's entry point as an ES module; Vite processes and bundles this file -->
   </body>
 </html>

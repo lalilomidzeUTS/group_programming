@@ -1,202 +1,204 @@
-body {
-    margin: 0;
-    padding: 0;
-    font-family: Verdana, sans-serif;
-    background-color: #1a1b2e;
+/* Shared styles for the Login and Register pages */
+
+body { /* override global body styles for the auth pages */
+    margin: 0; /* remove default browser margin */
+    padding: 0; /* remove default browser padding */
+    font-family: Verdana, sans-serif; /* set the app's chosen font */
+    background-color: #1a1b2e; /* dark navy background that matches the rest of the app */
 }
 
-.login-page {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 32px 20px;
-    background-color: #1a1b2e;
+.login-page { /* full-page wrapper for both the login and register pages */
+    min-height: 100vh; /* fill the entire viewport height so the background colour covers the screen */
+    display: flex; /* use flexbox to centre the card on the page */
+    flex-direction: column; /* stack the site title above the card vertically */
+    justify-content: center; /* centre children vertically in the page */
+    align-items: center; /* centre children horizontally */
+    padding: 32px 20px; /* add top/bottom padding on tall screens and horizontal padding on narrow screens */
+    background-color: #1a1b2e; /* match the body background colour */
 }
- 
-.site-title {
-    font-size: 28px;
-    color: #ffffff;
-    font-weight: bold;
-    letter-spacing: 2px;
-    margin-bottom: 20px;
-    text-align: center;
+
+.site-title { /* "KL Learning App" branding displayed above the card */
+    font-size: 28px; /* large enough to read but smaller than the card heading */
+    color: #ffffff; /* white text */
+    font-weight: bold; /* bold for emphasis */
+    letter-spacing: 2px; /* spread the letters slightly for a stylised look */
+    margin-bottom: 20px; /* space between the title and the card below */
+    text-align: center; /* centre-align the text */
 }
- 
-.site-title span {
-    color: #9a9de0;
+
+.site-title span { /* the "Learning App" part of the brand title */
+    color: #9a9de0; /* purple accent colour to visually distinguish this part */
 }
- 
-.card {
-    background-color: #2a2d52;
-    width: 400px;
-    padding: 45px 40px;
-    border-radius: 16px;
-    box-shadow: 0 0 40px rgba(79, 81, 125, 0.5);
-    border: 1px solid #3f4278;
+
+.card { /* the main form card panel */
+    background-color: #2a2d52; /* slightly lighter navy than the page background */
+    width: 400px; /* fixed width on desktop */
+    padding: 45px 40px; /* generous internal spacing */
+    border-radius: 16px; /* rounded corners */
+    box-shadow: 0 0 40px rgba(79, 81, 125, 0.5); /* purple glow shadow for depth */
+    border: 1px solid #3f4278; /* subtle border in the same purple family */
 }
- 
-.card-top {
-    text-align: center;
-    margin-bottom: 30px;
+
+.card-top { /* header area inside the card (icon + heading + subtitle) */
+    text-align: center; /* centre all content in the header */
+    margin-bottom: 30px; /* space between the header and the divider */
 }
- 
-.icon-circle {
-    width: 65px;
-    height: 65px;
-    background-color: #4F517D;
-    border-radius: 50%;
-    margin: 0 auto 16px auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 26px;
-    box-shadow: 0 0 20px rgba(79, 81, 125, 0.8);
+
+.icon-circle { /* circular icon container above the heading */
+    width: 65px; /* circle width */
+    height: 65px; /* circle height (equal to width = circle) */
+    background-color: #4F517D; /* purple fill matching the button colour */
+    border-radius: 50%; /* make it a perfect circle */
+    margin: 0 auto 16px auto; /* centre horizontally, 16px below the circle */
+    display: flex; /* flex to centre the emoji inside */
+    justify-content: center; /* horizontally centre the emoji */
+    align-items: center; /* vertically centre the emoji */
+    font-size: 26px; /* emoji display size */
+    box-shadow: 0 0 20px rgba(79, 81, 125, 0.8); /* purple glow around the circle */
 }
- 
-.card-top h1 {
-    font-size: 22px;
-    color: #ffffff;
-    margin-bottom: 5px;
+
+.card-top h1 { /* main heading inside the card header */
+    font-size: 22px; /* slightly smaller than a page-level heading */
+    color: #ffffff; /* white text */
+    margin-bottom: 5px; /* small gap between heading and subtitle */
 }
- 
-.card-top p {
-    font-size: 13px;
-    color: #9a9bc4;
+
+.card-top p { /* subtitle text below the heading */
+    font-size: 13px; /* smaller supporting text */
+    color: #9a9bc4; /* muted purple colour */
 }
- 
-.divider {
-    border: none;
-    border-top: 1px solid #3f4278;
-    margin-bottom: 24px;
+
+.divider { /* horizontal rule separating the card header from the form */
+    border: none; /* remove the default border */
+    border-top: 1px solid #3f4278; /* single purple top border acts as the divider line */
+    margin-bottom: 24px; /* space between the divider and the first form field */
 }
- 
-label {
-    display: block;
-    font-size: 11px;
-    color: #a0a2cc;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 6px;
+
+label { /* all form field labels on the auth pages */
+    display: block; /* make labels full-width so they sit on their own line */
+    font-size: 11px; /* small uppercase label style */
+    color: #a0a2cc; /* muted purple-grey */
+    font-weight: bold; /* bold for readability at small size */
+    text-transform: uppercase; /* all caps for the label style */
+    letter-spacing: 0.8px; /* slightly spread for the uppercase all-caps look */
+    margin-bottom: 6px; /* gap between the label and the input field below */
 }
- 
-.password-row {
-    display: flex;
-    align-items: center;
-    border: 1px solid #3f4278;
-    border-radius: 8px;
-    background-color: #1e2040;
-    margin-bottom: 16px;
-    transition: border-color 0.3s, box-shadow 0.3s;
+
+.password-row { /* flex container that holds the password input and the show/hide button side by side */
+    display: flex; /* arrange children in a row */
+    align-items: center; /* vertically centre the input and button */
+    border: 1px solid #3f4278; /* border wraps the whole row to look like a single input field */
+    border-radius: 8px; /* rounded corners matching the standard input radius */
+    background-color: #1e2040; /* darker background inside the password row */
+    margin-bottom: 16px; /* space below the row before the next field */
+    transition: border-color 0.3s, box-shadow 0.3s; /* smooth transition when focus highlight appears */
 }
- 
-.password-row:focus-within {
-    border-color: #7b7ec7;
-    box-shadow: 0 0 10px rgba(123, 126, 199, 0.4);
+
+.password-row:focus-within { /* applied when any child of .password-row has focus */
+    border-color: #7b7ec7; /* highlight the border in bright purple when the input is focused */
+    box-shadow: 0 0 10px rgba(123, 126, 199, 0.4); /* add a subtle purple glow on focus */
 }
- 
-.password-row input {
-    flex: 1;
-    padding: 12px 14px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    color: #ffffff;
-    background-color: transparent;
-    margin-bottom: 0;
-    outline: none;
-    box-sizing: border-box;
+
+.password-row input { /* the text/password input inside the flex row */
+    flex: 1; /* grow to fill all available width, leaving room for the show/hide button */
+    padding: 12px 14px; /* internal spacing matching other inputs */
+    border: none; /* remove individual border since the parent .password-row provides the border */
+    border-radius: 8px; /* match the parent's border radius */
+    font-size: 14px; /* consistent with other inputs */
+    color: #ffffff; /* white text */
+    background-color: transparent; /* transparent so the parent's background shows */
+    margin-bottom: 0; /* override the global input margin since the parent handles spacing */
+    outline: none; /* remove focus outline since the parent handles the focus style */
+    box-sizing: border-box; /* include padding in the width calculation */
 }
- 
-.password-row input::placeholder {
-    color: #5a5c8a;
+
+.password-row input::placeholder { /* placeholder text inside the password input */
+    color: #5a5c8a; /* muted grey-purple matching other placeholders */
 }
- 
-.show-hide-btn {
-    background: none;
-    border: none;
-    color: #9a9de0;
-    font-size: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    padding: 0 14px;
-    width: auto;
-    margin-top: 0;
-    letter-spacing: 0.5px;
+
+.show-hide-btn { /* the Show/Hide toggle button inside the password row */
+    background: none; /* no background fill */
+    border: none; /* no border */
+    color: #9a9de0; /* purple text colour */
+    font-size: 12px; /* small label */
+    font-weight: bold; /* bold for legibility */
+    cursor: pointer; /* hand cursor on hover */
+    padding: 0 14px; /* horizontal padding to keep it away from the input and the row edge */
+    width: auto; /* size to content */
+    margin-top: 0; /* override any inherited top margin */
+    letter-spacing: 0.5px; /* slight letter spacing for the small label */
 }
- 
-.show-hide-btn:hover {
-    color: #ffffff;
-    background: none;
-    box-shadow: none;
+
+.show-hide-btn:hover { /* hover state for the show/hide button */
+    color: #ffffff; /* brighten to white on hover */
+    background: none; /* keep background transparent */
+    box-shadow: none; /* no shadow on hover */
 }
- 
-input {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #3f4278;
-    border-radius: 8px;
-    font-size: 14px;
-    color: #ffffff;
-    background-color: #1e2040;
-    margin-bottom: 16px;
-    box-sizing: border-box;
-    transition: border-color 0.3s, box-shadow 0.3s;
+
+input { /* default styles for all standalone <input> elements on these pages */
+    width: 100%; /* fill the card width */
+    padding: 12px 14px; /* comfortable internal spacing */
+    border: 1px solid #3f4278; /* purple border */
+    border-radius: 8px; /* rounded corners */
+    font-size: 14px; /* readable font size */
+    color: #ffffff; /* white text */
+    background-color: #1e2040; /* darker navy background */
+    margin-bottom: 16px; /* space below each input before the next field */
+    box-sizing: border-box; /* include padding in the 100% width calculation */
+    transition: border-color 0.3s, box-shadow 0.3s; /* smooth focus highlight transition */
 }
- 
-input:focus {
-    border-color: #7b7ec7;
-    box-shadow: 0 0 10px rgba(123, 126, 199, 0.4);
-    outline: none;
+
+input:focus { /* styles applied when an input receives keyboard focus */
+    border-color: #7b7ec7; /* highlight border in bright purple */
+    box-shadow: 0 0 10px rgba(123, 126, 199, 0.4); /* add a purple glow */
+    outline: none; /* remove default browser focus outline */
 }
- 
-input::placeholder {
-    color: #5a5c8a;
+
+input::placeholder { /* placeholder text inside standard inputs */
+    color: #5a5c8a; /* muted grey-purple */
 }
- 
-.error {
-    color: #ff6b6b;
-    font-size: 11px;
-    margin-top: -12px;
-    margin-bottom: 12px;
-    display: none;
+
+.error { /* validation and server error messages below form fields */
+    color: #ff6b6b; /* red text to draw attention to the error */
+    font-size: 11px; /* smaller than the input text */
+    margin-top: -12px; /* pull the message up so it sits close to the field above */
+    margin-bottom: 12px; /* space below before the next element */
+    display: none; /* hidden by default; shown by React adding style={{ display: 'block' }} conditionally */
 }
- 
-.submit-btn {
-    width: 100%;
-    padding: 13px;
-    background-color: #4F517D;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 4px;
-    letter-spacing: 0.5px;
-    transition: background-color 0.3s, box-shadow 0.3s;
+
+.submit-btn { /* the main form submission button */
+    width: 100%; /* span the full card width */
+    padding: 13px; /* generous vertical padding for a tall, tappable button */
+    background-color: #4F517D; /* purple fill matching the icon circle */
+    color: #ffffff; /* white label text */
+    border: none; /* no border */
+    border-radius: 8px; /* rounded corners */
+    font-size: 14px; /* readable font size */
+    font-weight: bold; /* bold label */
+    cursor: pointer; /* hand cursor */
+    margin-top: 4px; /* small top gap between the last error/field and the button */
+    letter-spacing: 0.5px; /* slight letter spacing */
+    transition: background-color 0.3s, box-shadow 0.3s; /* smooth hover colour and glow transitions */
 }
- 
-.submit-btn:hover {
-    background-color: #6264a0;
-    box-shadow: 0 0 18px rgba(98, 100, 160, 0.6);
+
+.submit-btn:hover { /* hover state for the submit button */
+    background-color: #6264a0; /* lighten to a brighter purple */
+    box-shadow: 0 0 18px rgba(98, 100, 160, 0.6); /* add a purple glow on hover */
 }
- 
-.bottom-text {
-    text-align: center;
-    font-size: 12px;
-    color: #6a6b99;
-    margin-top: 20px;
+
+.bottom-text { /* "Don't have an account?" / "Already have an account?" section below the form */
+    text-align: center; /* centre the text */
+    font-size: 12px; /* small supporting text */
+    color: #6a6b99; /* muted grey-purple */
+    margin-top: 20px; /* space above, separating it from the button */
 }
- 
-.bottom-text a {
-    color: #9a9de0;
-    text-decoration: none;
-    font-weight: bold;
+
+.bottom-text a { /* the link inside the bottom text */
+    color: #9a9de0; /* purple accent link colour */
+    text-decoration: none; /* remove underline */
+    font-weight: bold; /* bold to stand out from the surrounding text */
 }
- 
-.bottom-text a:hover {
-    color: #ffffff;
+
+.bottom-text a:hover { /* hover state for the navigation link */
+    color: #ffffff; /* brighten to white on hover */
 }

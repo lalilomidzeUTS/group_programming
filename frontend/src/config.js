@@ -1,1 +1,1 @@
-export const API_URL = 'http://localhost:8000';
+export const API_URL = 'http://localhost:8000'; // base URL of the FastAPI backend server; every fetch call in the app prepends this so only this one line needs updating when deploying to a different host or port

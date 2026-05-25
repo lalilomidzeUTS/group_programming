@@ -1,184 +1,186 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
+/* Default Vite template styles — these are not actively used by the flashcard app pages */
 
-  &:hover {
-    border-color: var(--accent-border);
+.counter { /* interactive counter badge from the Vite starter template */
+  font-size: 16px; /* readable text size for the counter value */
+  padding: 5px 10px; /* horizontal and vertical space around the number */
+  border-radius: 5px; /* rounded corners */
+  color: var(--accent); /* use the theme accent colour */
+  background: var(--accent-bg); /* themed background for the badge */
+  border: 2px solid transparent; /* invisible border that becomes visible on hover for a smooth transition */
+  transition: border-color 0.3s; /* animate the border appearing on hover */
+  margin-bottom: 24px; /* space below the counter */
+
+  &:hover { /* styles applied when the mouse is over the counter */
+    border-color: var(--accent-border); /* reveal the accent border on hover */
   }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+  &:focus-visible { /* styles applied when the counter is keyboard-focused */
+    outline: 2px solid var(--accent); /* show a visible outline for accessibility */
+    outline-offset: 2px; /* push the outline slightly outside the element border */
   }
 }
 
-.hero {
-  position: relative;
+.hero { /* hero image container from the Vite starter template */
+  position: relative; /* allow absolutely positioned children (logos) to be placed relative to this */
 
-  .base,
-  .framework,
+  .base, /* base image layer (the central logo) */
+  .framework, /* framework logo overlay */
+  .vite { /* Vite logo overlay */
+    inset-inline: 0; /* set both left and right to 0 (logical property) */
+    margin: 0 auto; /* centre horizontally */
+  }
+
+  .base { /* the base/central logo image */
+    width: 170px; /* fixed width for the base logo */
+    position: relative; /* needed so z-index works; sits in normal flow */
+    z-index: 0; /* stacking order: behind the overlays */
+  }
+
+  .framework, /* shared position rules for the two overlay logos */
   .vite {
-    inset-inline: 0;
-    margin: 0 auto;
+    position: absolute; /* take the logos out of flow so they overlap the base */
   }
 
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
+  .framework { /* React/framework logo positioned above the base */
+    z-index: 1; /* sit above the base image */
+    top: 34px; /* distance from the top of .hero */
+    height: 28px; /* fixed height */
     transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
+      scale(1.4); /* 3-D perspective tilt to give a floating/orbiting effect */
   }
 
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
+  .vite { /* Vite logo positioned lower */
+    z-index: 0; /* sits behind the framework logo */
+    top: 107px; /* further down in the hero area */
+    height: 26px; /* slightly smaller than the framework logo */
+    width: auto; /* maintain aspect ratio */
     transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
+      scale(0.8); /* similar 3-D tilt but smaller scale */
   }
 }
 
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
+#center { /* main centred content column from the Vite template */
+  display: flex; /* flex container for the hero, counter, and next-steps sections */
+  flex-direction: column; /* stack children vertically */
+  gap: 25px; /* space between flex children */
+  place-content: center; /* centre content along both axes */
+  place-items: center; /* centre items on the cross axis */
+  flex-grow: 1; /* take up all available vertical space in the root flex column */
 
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
+  @media (max-width: 1024px) { /* tablet and below */
+    padding: 32px 20px 24px; /* add horizontal padding and reduce top/bottom */
+    gap: 18px; /* slightly tighter gap on smaller screens */
   }
 }
 
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
+#next-steps { /* "what's next" section at the bottom of the Vite template */
+  display: flex; /* side-by-side layout for the docs and community columns */
+  border-top: 1px solid var(--border); /* top border separating it from the content above */
+  text-align: left; /* left-align text inside the columns */
 
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
+  & > div { /* direct child divs are the two columns */
+    flex: 1 1 0; /* each column grows and shrinks equally */
+    padding: 32px; /* generous padding inside each column */
+    @media (max-width: 1024px) { /* tablet and below */
+      padding: 24px 20px; /* reduce padding on smaller screens */
     }
   }
 
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
+  .icon { /* icon image inside each column */
+    margin-bottom: 16px; /* space between the icon and the heading */
+    width: 22px; /* fixed icon width */
+    height: 22px; /* fixed icon height */
   }
 
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+  @media (max-width: 1024px) { /* tablet and below */
+    flex-direction: column; /* stack the columns vertically on small screens */
+    text-align: center; /* centre-align text when stacked */
   }
 }
 
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
+#docs { /* the documentation column inside #next-steps */
+  border-right: 1px solid var(--border); /* right border acts as a divider between the two columns */
 
-  .logo {
-    height: 18px;
+  @media (max-width: 1024px) { /* tablet and below */
+    border-right: none; /* remove the vertical divider */
+    border-bottom: 1px solid var(--border); /* add a bottom border to separate from the community section below */
+  }
+}
+
+#next-steps ul { /* unordered list of social/link buttons inside the columns */
+  list-style: none; /* remove default bullet points */
+  padding: 0; /* remove default list padding */
+  display: flex; /* arrange links in a row */
+  gap: 8px; /* space between link items */
+  margin: 32px 0 0; /* top margin to separate from the column text; no bottom margin */
+
+  .logo { /* logo image inside each link button */
+    height: 18px; /* fixed logo height */
   }
 
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
+  a { /* each link button */
+    color: var(--text-h); /* use the heading colour for link text */
+    font-size: 16px; /* readable font size */
+    border-radius: 6px; /* rounded corners on the button */
+    background: var(--social-bg); /* themed background colour */
+    display: flex; /* flex so the icon and text are aligned side by side */
+    padding: 6px 12px; /* internal spacing */
+    align-items: center; /* vertically centre icon and text */
+    gap: 8px; /* space between icon and text */
+    text-decoration: none; /* remove default underline from the anchor */
+    transition: box-shadow 0.3s; /* animate the shadow appearing on hover */
 
-    &:hover {
-      box-shadow: var(--shadow);
+    &:hover { /* styles applied when hovering over a link button */
+      box-shadow: var(--shadow); /* add a themed shadow on hover */
     }
-    .button-icon {
-      height: 18px;
-      width: 18px;
+    .button-icon { /* icon element inside each button */
+      height: 18px; /* fixed icon height */
+      width: 18px; /* fixed icon width */
     }
   }
 
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
+  @media (max-width: 1024px) { /* tablet and below */
+    margin-top: 20px; /* tighter top margin */
+    flex-wrap: wrap; /* allow buttons to wrap to a second row */
+    justify-content: center; /* centre the wrapped items */
 
-    li {
-      flex: 1 1 calc(50% - 8px);
+    li { /* each list item on small screens */
+      flex: 1 1 calc(50% - 8px); /* two items per row with the gap accounted for */
     }
 
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
+    a { /* link buttons on small screens */
+      width: 100%; /* fill the list item width */
+      justify-content: center; /* centre the icon and text inside the full-width button */
+      box-sizing: border-box; /* include padding in the width calculation */
     }
   }
 }
 
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
+#spacer { /* bottom spacer element at the very end of the Vite template page */
+  height: 88px; /* fixed height to push content away from the bottom */
+  border-top: 1px solid var(--border); /* top border to visually separate it */
+  @media (max-width: 1024px) { /* tablet and below */
+    height: 48px; /* shorter spacer on smaller screens */
   }
 }
 
-.ticks {
-  position: relative;
-  width: 100%;
+.ticks { /* decorative tick marks used as ornamental corners in the Vite template */
+  position: relative; /* needed for the absolutely positioned ::before and ::after pseudo-elements */
+  width: 100%; /* stretch to full container width */
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
+  &::before, /* left tick mark */
+  &::after { /* right tick mark */
+    content: ''; /* no text content; just the border creates the visual tick */
+    position: absolute; /* positioned relative to .ticks */
+    top: -4.5px; /* sit just above the top edge */
+    border: 5px solid transparent; /* transparent border provides the triangle shape mechanism */
   }
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
+  &::before { /* left tick mark specifics */
+    left: 0; /* anchor to the left edge */
+    border-left-color: var(--border); /* colour only the left side to create a left-pointing tick */
   }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
+  &::after { /* right tick mark specifics */
+    right: 0; /* anchor to the right edge */
+    border-right-color: var(--border); /* colour only the right side to create a right-pointing tick */
   }
 }
