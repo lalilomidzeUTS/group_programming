@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Depends, Response, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pymongo.errors import PyMongoError
 
 import bcrypt

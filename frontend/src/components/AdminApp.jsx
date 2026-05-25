@@ -27,6 +27,7 @@ function getAvatarColor(idx) {
 export default function AdminApp() {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [usersFetchFailed, setUsersFetchFailed] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -73,10 +74,11 @@ export default function AdminApp() {
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
+      setUsersFetchFailed(false);
       const res = await fetch(`${API_URL}/admin/users`, { headers: authHeaders });
       if (res.ok) setUsers(await res.json());
-      else await handleError(res, navigate, showToast);
-    } catch { showToast('Could not reach the server.'); }
+      else { setUsersFetchFailed(true); await handleError(res, navigate, showToast); }
+    } catch { setUsersFetchFailed(true); showToast('Could not reach the server.'); }
     finally { setLoadingUsers(false); }
   };
 
@@ -95,6 +97,7 @@ export default function AdminApp() {
   };
 
   const saveEdit = async () => {
+    if (!editQuestion.trim() || !editAnswer.trim()) return showToast('Question and answer cannot be empty.');
     const card = flashcards.find((c) => c.id === editingId);
     try {
       const res = await fetch(`${API_URL}/flashcards/${editingId}`, {
@@ -214,6 +217,8 @@ export default function AdminApp() {
           <div className="user-list">
             {loadingUsers ? (
               <div className="no-users-msg">Loading users...</div>
+            ) : usersFetchFailed ? (
+              <div className="no-users-msg">Failed to load users.<br />Check your connection and refresh.</div>
             ) : users.length === 0 ? (
               <div className="no-users-msg">No users registered yet.<br />They appear here once someone uses the app.</div>
             ) : filteredUsers.length === 0 ? (
