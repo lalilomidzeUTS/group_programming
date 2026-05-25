@@ -1,58 +1,60 @@
-*, *::before, *::after {
-  box-sizing: border-box;
+/* Global CSS reset and base styles applied to the entire application */
+
+*, *::before, *::after { /* target every element and its pseudo-elements */
+  box-sizing: border-box; /* include padding and border in an element's declared width/height so layouts behave predictably */
 }
 
-body {
-  margin: 0;
+body { /* base styles for the document body */
+  margin: 0; /* remove the default 8px margin browsers apply to the body */
 }
 
-#root {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+#root { /* the React mount point <div id="root"> in index.html */
+  width: 100%; /* stretch the root div to fill the full browser width */
+  min-height: 100vh; /* ensure the root is at least as tall as the viewport so background colours fill the screen */
+  display: flex; /* use flexbox so child components can fill the available space */
+  flex-direction: column; /* stack children vertically */
 }
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2 { /* heading styles shared by h1 and h2 elements */
+  font-family: var(--heading); /* use the heading CSS custom property font (defined by Vite's default theme) */
+  font-weight: 500; /* medium weight for a clean look */
+  color: var(--text-h); /* use the theme's heading text colour variable */
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+h1 { /* specific styles for the largest heading level */
+  font-size: 56px; /* large display size for hero headings */
+  letter-spacing: -1.68px; /* tighten letter spacing for display text to look more polished */
+  margin: 32px 0; /* vertical spacing above and below */
+  @media (max-width: 1024px) { /* on tablets and smaller screens */
+    font-size: 36px; /* reduce size so it fits without overflowing */
+    margin: 20px 0; /* tighten vertical spacing */
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+h2 { /* specific styles for the second heading level */
+  font-size: 24px; /* slightly smaller than h1 */
+  line-height: 118%; /* compact line height for subheadings */
+  letter-spacing: -0.24px; /* subtle negative tracking */
+  margin: 0 0 8px; /* no top margin, 8px bottom gap */
+  @media (max-width: 1024px) { /* on tablets and smaller */
+    font-size: 20px; /* reduce to keep proportional with reduced h1 */
   }
 }
-p {
-  margin: 0;
+p { /* base paragraph style */
+  margin: 0; /* remove default paragraph margin so spacing is controlled explicitly */
 }
 
 code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.counter { /* monospace code and counter display elements share these styles */
+  font-family: var(--mono); /* use the monospace font variable from the Vite theme */
+  display: inline-flex; /* allows padding and alignment without breaking inline flow */
+  border-radius: 4px; /* slightly rounded corners */
+  color: var(--text-h); /* use the heading colour variable */
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+code { /* additional styles specific to inline code snippets */
+  font-size: 15px; /* slightly smaller than body text for code readability */
+  line-height: 135%; /* generous line height inside code blocks */
+  padding: 4px 8px; /* small padding so the background is visible around the text */
+  background: var(--code-bg); /* themed background colour for code */
 }

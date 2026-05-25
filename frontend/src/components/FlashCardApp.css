@@ -1,443 +1,652 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* Styles for the main FlashCard App page (My Cards, Study, and History tabs) */
+
+* { /* universal reset */
+    margin: 0; /* remove default margins */
+    padding: 0; /* remove default padding */
+    box-sizing: border-box; /* include padding and border in width/height values */
 }
 
-body {
-    font-family: Verdana, sans-serif;
-    background-color: #13142a;
-    color: #ffffff;
-    min-height: 100vh;
+body { /* base page styles */
+    font-family: Verdana, sans-serif; /* consistent app font */
+    background-color: #1a1b2e; /* dark navy background */
+    color: #ffffff; /* white default text */
+    min-height: 100vh; /* fill the full viewport */
 }
 
-.app-container {
-    display: flex;
-    justify-content: center;
-    padding: 48px 20px 80px;
+.app-container { /* outer page wrapper that centres the content column */
+    display: flex; /* flex to allow horizontal centering */
+    justify-content: center; /* centre the inner wrapper */
+    padding: 40px 20px; /* top/bottom padding and horizontal padding for narrow viewports */
 }
 
-.app-wrapper {
-    width: 100%;
-    max-width: 700px;
+.app-wrapper { /* inner constrained-width content column */
+    width: 100%; /* fill available space up to max-width */
+    max-width: 680px; /* cap width so the layout doesn't stretch too wide on large monitors */
 }
 
-/* ── User bar (logout / status) ── */
-.user-bar {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-bottom: 16px;
+.header { /* page header containing the user info and centred app title */
+    position: relative; /* needed so the absolutely positioned .header-user doesn't shift the layout */
+    display: flex; /* flex row */
+    align-items: center; /* vertically centre */
+    justify-content: center; /* centre the title horizontally */
+    margin-bottom: 30px; /* space below the header before the tabs */
 }
 
-.user-bar-name {
-    font-size: 12px;
-    color: #5a5c8a;
+.header-title { /* centred app name and tagline */
+    text-align: center; /* centre-align the heading and subtitle */
 }
 
-.logout-btn {
-    padding: 6px 14px;
-    background: transparent;
-    color: #5a5c8a;
-    border: 1px solid #35386b;
-    border-radius: 8px;
-    font-size: 12px;
-    font-family: Verdana, sans-serif;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
+.header h1 { /* "KL Learning App" heading */
+    font-size: 32px; /* page heading size */
+    color: #ffffff; /* white */
+    margin-bottom: 6px; /* gap between heading and tagline */
 }
 
-.logout-btn:hover {
-    border-color: #e06060;
-    color: #e06060;
+.header h1 span { /* "Learning App" part of the heading */
+    color: #9a9de0; /* purple accent */
 }
 
-/* ── Header ── */
-.header {
-    text-align: center;
-    margin-bottom: 36px;
+.header p { /* tagline "Study smarter, remember more" */
+    font-size: 13px; /* small supporting text */
+    color: #6a6b99; /* muted grey-purple */
 }
 
-.header h1 {
-    font-size: 34px;
-    font-weight: bold;
-    color: #ffffff;
-    margin-bottom: 8px;
+.app-wrapper .tabs { /* tab bar for My Cards / Study / History */
+    display: flex; /* flex row of buttons */
+    justify-content: center; /* centre the tab group */
+    gap: 6px; /* space between tab buttons */
+    background-color: #2a2d52; /* slightly lighter navy background for the tab bar */
+    border: 1px solid #3f4278; /* purple border around the entire tab bar */
+    border-radius: 12px; /* rounded tab bar */
+    padding: 5px; /* inner padding so buttons don't touch the border */
+    margin-bottom: 28px; /* space below the tab bar before page content */
 }
 
-.header h1 span {
-    color: #8b8fe8;
+.app-wrapper .tab-btn { /* individual tab button */
+    padding: 8px 22px; /* button padding */
+    background: none; /* transparent by default */
+    border: none; /* no border; the tab bar has a border instead */
+    border-radius: 8px; /* rounded so the active state looks like a pill inside the bar */
+    font-size: 13px; /* tab label size */
+    font-family: Verdana, sans-serif; /* consistent font */
+    font-weight: bold; /* bold labels */
+    color: #6a6b99; /* muted text for inactive tabs */
+    cursor: pointer; /* hand cursor */
+    transition: background 0.2s, color 0.2s; /* smooth active/hover transition */
 }
 
-.header p {
-    font-size: 13px;
-    color: #5a5c8a;
+.app-wrapper .tab-btn:hover { /* hover state */
+    color: #ffffff; /* white text on hover */
 }
 
-/* ── Input section ── */
-.input-section {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    background: #1e2040;
-    border: 1px solid #35386b;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 20px;
+.app-wrapper .tab-btn.active { /* selected tab */
+    background-color: #4f517d; /* filled purple background for the active tab */
+    color: #ffffff; /* white text */
 }
 
-.input-section input {
-    flex: 1;
-    min-width: 140px;
-    padding: 13px 16px;
-    background: #13142a;
-    border: 1px solid #35386b;
-    border-radius: 10px;
-    color: #ffffff;
-    font-size: 14px;
-    font-family: Verdana, sans-serif;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+.input-section { /* flex row containing the question input, answer input, and Add/Save button */
+    display: flex; /* flex row */
+    gap: 10px; /* space between inputs and button */
+    margin-bottom: 16px; /* space below the input row before the search box */
+    flex-wrap: wrap; /* allow wrapping on narrow screens so inputs stack before the button */
 }
 
-.input-section input:focus {
-    border-color: #8b8fe8;
-    box-shadow: 0 0 0 3px rgba(139,143,232,0.12);
+.input-section input { /* question and answer text inputs */
+    flex: 1; /* grow to fill available space, sharing the row equally */
+    min-width: 120px; /* minimum width before wrapping kicks in */
+    height: 44px; /* explicit height ensures inputs and button are exactly the same height */
+    padding: 0 14px; /* horizontal-only padding; height controls vertical space */
+    background-color: #2a2d52; /* card-matching background */
+    border: 1px solid #3f4278; /* purple border */
+    border-radius: 10px; /* rounded corners */
+    color: #ffffff; /* white text */
+    font-size: 14px; /* body text size */
+    font-family: Verdana, sans-serif; /* consistent font */
+    outline: none; /* remove default browser focus ring */
+    transition: border-color 0.2s; /* smooth focus highlight */
 }
 
-.input-section input::placeholder { color: #454780; }
-
-.input-section button {
-    padding: 13px 24px;
-    background: #5557a0;
-    color: #ffffff;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: bold;
-    font-family: Verdana, sans-serif;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s, transform 0.1s;
+.input-section input:focus { /* focus state for the question/answer inputs */
+    border-color: #7b7ec7; /* bright purple border on focus */
 }
 
-.input-section button:hover  { background: #6c6fc4; }
-.input-section button:active { transform: scale(0.97); }
-.input-section button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* ── Search ── */
-.search-box {
-    width: 100%;
-    padding: 13px 16px;
-    background: #1e2040;
-    border: 1px solid #35386b;
-    border-radius: 12px;
-    color: #ffffff;
-    font-size: 14px;
-    font-family: Verdana, sans-serif;
-    outline: none;
-    margin-bottom: 24px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+.input-section input::placeholder { /* placeholder text inside the inputs */
+    color: #5a5c8a; /* muted grey-purple */
 }
 
-.search-box:focus {
-    border-color: #8b8fe8;
-    box-shadow: 0 0 0 3px rgba(139,143,232,0.12);
+.input-section button { /* Add / Save / Cancel buttons inside the input section */
+    height: 44px; /* same explicit height as the inputs so all elements align */
+    padding: 0 20px; /* horizontal-only padding; height controls vertical space */
+    background-color: #4F517D; /* purple fill */
+    color: #ffffff; /* white label */
+    border: none; /* no border */
+    border-radius: 10px; /* rounded corners matching the inputs */
+    font-size: 14px; /* consistent font size */
+    font-family: Verdana, sans-serif; /* consistent font */
+    font-weight: bold; /* bold label */
+    cursor: pointer; /* hand cursor */
+    transition: background 0.2s; /* smooth hover colour change */
+    white-space: nowrap; /* prevent the label from wrapping to a second line */
 }
 
-.search-box::placeholder { color: #454780; }
-
-/* ── Empty state ── */
-.empty-state {
-    text-align: center;
-    padding: 48px 20px;
-    color: #454780;
-    font-size: 14px;
+.input-section button:hover { /* hover state for buttons in the input section */
+    background-color: #6264a0; /* brighter purple on hover */
 }
 
-/* ── Card list ── */
-.flashcard-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding-bottom: 40px;
+.input-section.edit-mode { /* input section when a card is being edited */
+    background: #1e2040; /* darker background to visually distinguish edit mode */
+    border: 1px solid #7b7ec7; /* bright purple border to highlight the editing state */
+    border-radius: 12px; /* slightly larger radius than buttons so the border looks contained */
+    padding: 12px; /* inner padding so inputs aren't flush with the border */
 }
 
-.fc-wrapper {
-    position: relative;
-    width: 100%;
+.edit-label { /* "Editing card" label displayed above the input section */
+    font-size: 11px; /* small all-caps label */
+    color: #9a9de0; /* purple accent text */
+    margin-bottom: 8px; /* gap below the label before the input section */
+    letter-spacing: 1px; /* spread for the label style */
+    text-transform: uppercase; /* all caps */
+    display: none; /* hidden by default; shown only in edit mode */
 }
 
-.fc-box {
-    width: 100%;
-    height: 240px;
-    perspective: 1200px;
-    cursor: pointer;
+.edit-label.visible { /* state applied by React when editingId is set */
+    display: block; /* make the label visible above the input section */
 }
 
-.fc-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 14px;
+.btn-cancel { /* the ✕ cancel button shown next to Add/Save when editing */
+    padding: 12px 16px; /* padding matching the old button padding for consistent height with height:44px override */
+    background-color: transparent; /* transparent background */
+    color: #6a6b99; /* muted text */
+    border: 1px solid #3f4278; /* purple border */
+    border-radius: 10px; /* rounded corners */
+    font-size: 13px; /* slightly smaller than the add button */
+    cursor: pointer; /* hand cursor */
+    transition: all 0.2s; /* smooth hover transition */
 }
 
-.fc-edit-btn,
-.fc-delete-btn {
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid #35386b;
-    font-size: 12px;
-    font-family: Verdana, sans-serif;
-    cursor: pointer;
-    transition: background 0.18s, border-color 0.18s;
+.btn-cancel:hover { /* hover state for the cancel button */
+    border-color: #7b7ec7; /* brighter purple border */
+    color: #ffffff; /* white text */
 }
 
-.fc-edit-btn {
-    background: #13142a;
-    color: #8b8fe8;
+.search-box { /* search input for filtering the card list */
+    width: 100%; /* fill the full content width */
+    padding: 12px 14px; /* comfortable padding */
+    background-color: #2a2d52; /* card-matching background */
+    border: 1px solid #3f4278; /* purple border */
+    border-radius: 10px; /* rounded corners */
+    color: #ffffff; /* white text */
+    font-size: 14px; /* body text size */
+    font-family: Verdana, sans-serif; /* consistent font */
+    outline: none; /* remove default focus ring */
+    margin-bottom: 20px; /* space below before the card list */
+    transition: border-color 0.2s; /* smooth focus highlight */
 }
 
-.fc-edit-btn:hover {
-    background: #252849;
-    border-color: #8b8fe8;
+.search-box:focus { /* focus state for the search box */
+    border-color: #7b7ec7; /* bright purple border */
 }
 
-.fc-delete-btn {
-    background: #13142a;
-    color: #e06060;
+.search-box::placeholder { /* placeholder text */
+    color: #5a5c8a; /* muted grey-purple */
 }
 
-.fc-delete-btn:hover {
-    background: #3a1a1a;
-    border-color: #e06060;
+.app-wrapper .card-item { /* a single flashcard in the My Cards list */
+    background-color: #2a2d52; /* card background */
+    border: 1px solid #3f4278; /* purple border */
+    border-radius: 12px; /* rounded corners */
+    padding: 18px 20px; /* comfortable internal padding */
+    margin-bottom: 12px; /* gap between cards */
+    transition: border-color 0.2s; /* smooth hover border change */
 }
 
-.fc-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+.app-wrapper .card-item:hover { /* hover state for card items */
+    border-color: #5a5c8a; /* slightly brighter border to indicate interactivity */
 }
 
-.fc-box.flipped .fc-inner {
-    transform: rotateY(180deg);
+.app-wrapper .card-item.editing { /* card currently being edited */
+    border-color: #7b7ec7; /* bright purple to highlight the active card */
 }
 
-.fc-front,
-.fc-back {
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 32px 40px;
-    text-align: center;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transition: box-shadow 0.2s;
+.app-wrapper .card-view { /* inner flex row: text block on left, action buttons on right */
+    display: flex; /* flex row */
+    justify-content: space-between; /* push text and buttons to opposite ends */
+    align-items: flex-start; /* align to the top so long text doesn't push buttons down */
+    gap: 12px; /* space between text and buttons */
 }
 
-.fc-front {
-    background: #1e2040;
-    border: 1px solid #35386b;
+.app-wrapper .card-texts { /* text block containing question and answer */
+    flex: 1; /* grow to fill available space */
+    min-width: 0; /* allow text to truncate/wrap without overflowing */
 }
 
-.fc-back {
-    background: #1a1d3a;
-    border: 1px solid #5557a0;
-    transform: rotateY(180deg);
+.app-wrapper .card-field { /* a single question or answer row */
+    display: flex; /* flex row: badge + text */
+    align-items: baseline; /* align text on baselines for a neat look */
+    gap: 8px; /* space between badge and text */
+    margin-bottom: 6px; /* gap between question and answer rows */
 }
 
-.fc-box:hover .fc-front,
-.fc-box:hover .fc-back {
-    box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+.app-wrapper .card-field:last-child { /* last field in the card (typically the answer) */
+    margin-bottom: 0; /* remove bottom margin to avoid extra space inside the card */
 }
 
-.fc-label {
-    font-size: 10px;
-    font-weight: bold;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 3px 10px;
-    border-radius: 20px;
+.app-wrapper .field-label { /* "Q" or "A" badge */
+    font-size: 10px; /* small label */
+    font-weight: bold; /* bold */
+    letter-spacing: 1.2px; /* spread for the badge style */
+    text-transform: uppercase; /* all caps */
+    padding: 2px 7px; /* compact pill padding */
+    border-radius: 4px; /* slightly rounded */
+    flex-shrink: 0; /* always show the full badge, never shrink */
+    line-height: 1.6; /* generous line height so the badge isn't too short */
 }
 
-.fc-front .fc-label {
-    background: #2a2d52;
-    color: #8b8fe8;
-    border: 1px solid #35386b;
+.app-wrapper .field-label.q-label { /* question badge colours */
+    background: #3f4278; /* purple background */
+    color: #b0b3e8; /* light purple text */
 }
 
-.fc-back .fc-label {
-    background: #2a2a5a;
-    color: #b0b3f5;
-    border: 1px solid #5557a0;
+.app-wrapper .field-label.a-label { /* answer badge colours */
+    background: #2e3a2e; /* dark green background */
+    color: #7ec87e; /* green text */
 }
 
-.fc-text {
-    font-size: 18px;
-    font-weight: bold;
-    color: #e8e9ff;
-    line-height: 1.4;
-    word-break: break-word;
+.app-wrapper .card-question { /* question text inside a card */
+    font-size: 15px; /* slightly larger than answer for emphasis */
+    word-break: break-word; /* wrap long words so they don't overflow */
+    margin: 0; /* remove default paragraph margin */
 }
 
-.fc-back .fc-text {
-    color: #b0b3f5;
+.app-wrapper .card-answer { /* answer text inside a card */
+    font-size: 13px; /* slightly smaller than question text */
+    color: #9a9de0; /* muted purple to visually separate from the question */
+    word-break: break-word; /* wrap long words */
+    margin: 0; /* remove default paragraph margin */
 }
 
-/* ── Modal ── */
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.65);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 200;
-    padding: 20px;
-    backdrop-filter: blur(2px);
+.app-wrapper .card-actions { /* Edit and Delete button group */
+    display: flex; /* flex row */
+    gap: 8px; /* space between buttons */
+    flex-shrink: 0; /* don't shrink; always show both buttons */
+    margin-left: auto; /* push button group to the right even without justify-content */
 }
 
-.modal {
-    background: #1e2040;
-    border: 1px solid #35386b;
-    border-radius: 20px;
-    width: 100%;
-    max-width: 500px;
-    overflow: hidden;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+.app-wrapper .text-btn { /* shared styles for Edit and Delete buttons */
+    background: none; /* transparent */
+    border: 1px solid #3f4278; /* purple border */
+    cursor: pointer; /* hand cursor */
+    font-size: 12px; /* small label */
+    font-family: Verdana, sans-serif; /* consistent font */
+    font-weight: bold; /* bold */
+    padding: 5px 12px; /* compact padding */
+    border-radius: 6px; /* rounded corners */
+    letter-spacing: 0.5px; /* slight spacing */
+    transition: all 0.2s; /* smooth hover transitions */
 }
 
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 22px 24px 18px;
-    border-bottom: 1px solid #2a2d52;
+.app-wrapper .text-btn.edit { /* Edit button variant */
+    color: #9a9de0; /* purple text */
+    border-color: #4f517d; /* purple border */
 }
 
-.modal-header h3 {
-    font-size: 17px;
-    color: #ffffff;
+.app-wrapper .text-btn.edit:hover { /* Edit button hover */
+    background: #3f4278; /* fill purple on hover */
+    color: #ffffff; /* white text */
 }
 
-.modal-close {
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #13142a;
-    border: 1px solid #35386b;
-    border-radius: 8px;
-    color: #6a6b99;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.18s;
+.app-wrapper .text-btn.delete { /* Delete button variant */
+    color: #ff6b6b; /* red text */
+    border-color: #6b2e2e; /* dark red border */
 }
 
-.modal-close:hover { background: #2a2d52; color: #ffffff; border-color: #6c6fc4; }
-
-.modal-body {
-    padding: 22px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+.app-wrapper .text-btn.delete:hover { /* Delete button hover */
+    background: #6b2e2e; /* fill dark red on hover */
+    color: #ffaaaa; /* light red text */
 }
 
-.modal-body label {
-    font-size: 11px;
-    color: #6a6b99;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: -6px;
-    display: block;
+.app-wrapper .empty-state { /* placeholder text when the card list is empty */
+    text-align: center; /* centre message */
+    padding: 40px; /* generous padding */
+    color: #6a6b99; /* muted grey-purple */
 }
 
-.modal-body input {
-    width: 100%;
-    padding: 13px 16px;
-    background: #13142a;
-    border: 1px solid #35386b;
-    border-radius: 10px;
-    color: #ffffff;
-    font-size: 14px;
-    font-family: Verdana, sans-serif;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    box-sizing: border-box;
+.app-wrapper .stats { /* "N cards total" summary below the card list */
+    margin-top: 15px; /* space above */
+    text-align: center; /* centre */
+    color: #6a6b99; /* muted */
+    font-size: 13px; /* small */
 }
 
-.modal-body input:focus {
-    border-color: #8b8fe8;
-    box-shadow: 0 0 0 3px rgba(139,143,232,0.12);
+.study-idle-header { /* "You have N cards ready to study" message on the idle study screen */
+    text-align: center; /* centre */
+    margin-bottom: 28px; /* space below before the start button */
+    color: #9a9de0; /* purple text */
+    font-size: 15px; /* body text size */
 }
 
-.modal-body input::placeholder { color: #454780; }
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 16px 24px 22px;
-    border-top: 1px solid #2a2d52;
+.study-idle-header strong { /* the bold card count number inside the idle header */
+    color: #ffffff; /* white to make the number stand out */
+    font-size: 22px; /* larger than surrounding text for emphasis */
 }
 
-.btn-primary {
-    padding: 11px 22px;
-    background: #5557a0;
-    color: #ffffff;
-    border: none;
-    border-radius: 10px;
-    font-size: 13px;
-    font-family: Verdana, sans-serif;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.2s;
+.study-controls { /* Prev / Flip / Next button row in study mode */
+    display: flex; /* flex row */
+    justify-content: center; /* centre the buttons */
+    gap: 10px; /* space between buttons */
+    margin-top: 20px; /* space above the controls */
 }
 
-.btn-primary:hover { background: #6c6fc4; }
-
-.btn-ghost {
-    padding: 11px 22px;
-    background: transparent;
-    color: #6a6b99;
-    border: 1px solid #35386b;
-    border-radius: 10px;
-    font-size: 13px;
-    font-family: Verdana, sans-serif;
-    cursor: pointer;
-    transition: all 0.2s;
+.btn-primary, .btn-secondary, .btn-ghost { /* shared styles for the three study button variants */
+    padding: 10px 22px; /* generous button padding */
+    border-radius: 8px; /* rounded corners */
+    border: none; /* no border by default (overridden for secondary and ghost) */
+    cursor: pointer; /* hand cursor */
+    font-family: Verdana, sans-serif; /* consistent font */
+    font-size: 13px; /* label size */
+    transition: all 0.2s; /* smooth hover transition */
 }
 
-.btn-ghost:hover { border-color: #6c6fc4; color: #ffffff; }
-
-/* ── Toast ── */
-.toast {
-    position: fixed;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%) translateY(12px);
-    background: #5557a0;
-    color: #ffffff;
-    padding: 11px 24px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-family: Verdana, sans-serif;
-    opacity: 0;
-    transition: opacity 0.25s, transform 0.25s;
-    pointer-events: none;
-    z-index: 999;
-    white-space: nowrap;
+.btn-primary { /* primary (filled) button: Start Studying, Flip, Study Again */
+    background: #4F517D; /* purple fill */
+    color: white; /* white label */
 }
 
-.toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+.btn-primary:hover { /* primary hover */
+    background: #6264a0; /* brighter purple */
+}
+
+.btn-secondary { /* secondary (outlined) button: Prev, Next */
+    background: #2a2d52; /* dark background */
+    color: white; /* white label */
+    border: 1px solid #3f4278; /* purple border */
+}
+
+.btn-secondary:hover { /* secondary hover */
+    border-color: #7b7ec7; /* brighter border */
+}
+
+.btn-ghost { /* ghost (transparent) button: End Session */
+    background: transparent; /* fully transparent */
+    color: #6a6b99; /* muted label */
+    border: 1px solid #3f4278; /* purple border */
+}
+
+.btn-ghost:hover { /* ghost hover */
+    color: #ffffff; /* white label */
+    border-color: #7b7ec7; /* brighter border */
+}
+
+.btn-primary:disabled, .btn-secondary:disabled { /* disabled state for primary and secondary buttons */
+    opacity: 0.35; /* fade out to indicate unavailability */
+    cursor: not-allowed; /* show "not allowed" cursor */
+}
+
+.center-btn { /* wrapper that centres a single button horizontally */
+    display: flex; /* flex to allow justify-content */
+    justify-content: center; /* centre the button */
+    margin-top: 16px; /* space above */
+}
+
+.progress-bg { /* grey track of the study progress bar */
+    width: 100%; /* full width */
+    height: 6px; /* thin bar */
+    background: #2a2d52; /* dark navy track */
+    border-radius: 99px; /* fully rounded ends */
+    margin: 8px 0 20px; /* top/bottom spacing */
+    overflow: hidden; /* clip the fill so it doesn't exceed the rounded corners */
+}
+
+.progress-fill { /* purple fill of the progress bar */
+    height: 100%; /* fill the full track height */
+    background: #7b7ec7; /* purple */
+    border-radius: 99px; /* rounded ends */
+    transition: width 0.4s ease; /* smooth width animation as cards advance */
+}
+
+#progressLabel { /* "Card X of Y" label above the progress bar */
+    font-size: 13px; /* small text */
+    color: #6a6b99; /* muted grey-purple */
+    text-align: center; /* centre */
+}
+
+.flashcard-box { /* outer container for the 3-D flipping card */
+    width: 100%; /* full column width */
+    height: 260px; /* fixed height for the card */
+    perspective: 1000px; /* enable 3-D perspective depth for the flip animation */
+    cursor: pointer; /* hand cursor to indicate clickability */
+    margin-bottom: 8px; /* gap below card before the flip hint */
+}
+
+.flashcard-inner { /* the element that actually rotates in 3-D; both faces are inside this */
+    position: relative; /* needed for absolute positioning of the faces */
+    width: 100%; /* fill the outer box */
+    height: 100%; /* fill the outer box height */
+    transition: transform 0.6s cubic-bezier(.4,0,.2,1); /* smooth 3-D rotation using a natural easing curve */
+    transform-style: preserve-3d; /* ensure children are rendered in 3-D space */
+}
+
+.flashcard-box.flipped .flashcard-inner { /* state when the card is flipped to the answer side */
+    transform: rotateY(180deg); /* rotate 180° around the Y axis to reveal the back face */
+}
+
+.flashcard-front, .flashcard-back { /* shared styles for both faces of the flashcard */
+    position: absolute; /* stack both faces on top of each other inside the inner element */
+    width: 100%; /* fill the inner element width */
+    height: 100%; /* fill the inner element height */
+    border-radius: 16px; /* rounded card corners */
+    background-color: #2a2d52; /* dark card background (overridden for the back below) */
+    border: 1px solid #3f4278; /* purple border */
+    display: flex; /* flex column to centre the badge and text */
+    flex-direction: column; /* stack badge above text */
+    align-items: center; /* horizontally centre */
+    justify-content: center; /* vertically centre */
+    padding: 32px 40px 24px; /* internal padding with extra top space for the badge */
+    text-align: center; /* centre all text */
+    backface-visibility: hidden; /* hide the face when it is rotated away from the viewer */
+    -webkit-backface-visibility: hidden; /* same for older Safari/WebKit */
+    gap: 14px; /* space between the badge and the main text */
+}
+
+.flashcard-back { /* additional styles specific to the answer face */
+    transform: rotateY(180deg); /* pre-rotate the back face so it faces the viewer after the flip */
+    border-color: #3a4f3a; /* green-tinted border to distinguish from the front */
+    background-color: #232e23; /* dark green background for the answer side */
+}
+
+.card-side-badge { /* "Question" or "Answer" label badge at the top of each face */
+    font-size: 10px; /* small label */
+    font-weight: bold; /* bold */
+    letter-spacing: 1.4px; /* spread for the badge label style */
+    text-transform: uppercase; /* all caps */
+    padding: 3px 10px; /* compact pill padding */
+    border-radius: 20px; /* fully rounded pill */
+    position: absolute; /* position relative to the face */
+    top: 14px; /* distance from the top of the card */
+    left: 50%; /* start at horizontal centre */
+    transform: translateX(-50%); /* shift left by half its own width to truly centre it */
+}
+
+.flashcard-front .card-side-badge { /* "Question" badge on the front face */
+    background: #3f4278; /* purple background */
+    color: #b0b3e8; /* light purple text */
+}
+
+.flashcard-back .card-side-badge { /* "Answer" badge on the back face */
+    background: #2e4a2e; /* dark green background */
+    color: #7ec87e; /* green text */
+}
+
+.flashcard-front .card-main-text { /* question text on the front face */
+    font-size: 20px; /* large readable text */
+    font-weight: bold; /* bold */
+    color: #ffffff; /* white */
+}
+
+.flashcard-back .card-main-text { /* answer text on the back face */
+    font-size: 20px; /* matching size */
+    font-weight: bold; /* bold */
+    color: #9de09a; /* light green to complement the green card background */
+}
+
+.flip-hint { /* "Click card to flip" instruction below the flashcard */
+    text-align: center; /* centre */
+    font-size: 12px; /* small */
+    color: #5a5c8a; /* muted grey-purple */
+    margin-bottom: 4px; /* small gap above the controls */
+}
+
+.session-done { /* summary screen shown after a study session ends */
+    text-align: center; /* centre all content */
+    padding: 40px 20px; /* generous padding */
+}
+
+.session-done h2 { /* "Session Complete!" heading */
+    font-size: 26px; /* large celebratory heading */
+    margin-bottom: 10px; /* gap below */
+}
+
+.session-done p { /* "You reviewed N of M cards." text */
+    color: #9a9de0; /* purple */
+    margin-bottom: 24px; /* gap above the Study Again button */
+}
+
+.app-wrapper .history-item { /* a single history event card in the History tab */
+    background-color: #2a2d52; /* card background */
+    padding: 14px 18px; /* comfortable padding */
+    border-radius: 10px; /* rounded corners */
+    margin-bottom: 10px; /* gap between events */
+    border: 1px solid #3f4278; /* purple border */
+}
+
+.app-wrapper .history-item-row { /* flex row inside a history item: title/date + badge */
+    display: flex; /* flex row */
+    justify-content: space-between; /* push apart */
+    align-items: flex-start; /* align to top */
+    gap: 10px; /* space between content and badge */
+}
+
+.app-wrapper .history-item h4 { /* event type heading */
+    font-size: 14px; /* slightly larger than supporting text */
+    color: #ffffff; /* white */
+    margin-bottom: 3px; /* small gap before the date */
+}
+
+.app-wrapper .history-item .history-date { /* event timestamp */
+    font-size: 12px; /* small */
+    color: #6a6b99; /* muted */
+}
+
+.app-wrapper .history-badge { /* event type badge pill */
+    background: #4F517D; /* default purple (overridden per type below) */
+    color: #fff; /* white text */
+    font-size: 12px; /* small */
+    padding: 4px 10px; /* pill padding */
+    border-radius: 20px; /* fully rounded */
+    white-space: nowrap; /* don't wrap */
+    flex-shrink: 0; /* always show the badge in full */
+}
+
+.app-wrapper .history-badge.badge-delete { background: #6b2e2e; color: #ffaaaa; } /* Deleted badge: dark red, light red text */
+.app-wrapper .history-badge.badge-edit   { background: #3a3a6b; color: #aaaaf8; } /* Edited badge: dark purple, light purple text */
+.app-wrapper .history-badge.badge-create { background: #2e4a38; color: #7ecc99; } /* Created badge: dark green, light green text */
+
+.app-wrapper .history-card-detail { /* card snapshot block below the event header */
+    margin-top: 8px; /* gap below the event header row */
+    padding: 8px 12px; /* compact padding */
+    background: #1e2040; /* darker background to distinguish from the card */
+    border-radius: 8px; /* rounded */
+    border-left: 3px solid #3f4278; /* left accent border (colour overridden per event type) */
+    font-size: 12px; /* small text */
+}
+
+.app-wrapper .history-card-detail.detail-delete { border-left-color: #ff6b6b; } /* red accent for deleted card snapshots */
+.app-wrapper .history-card-detail.detail-edit   { border-left-color: #7b7ec7; } /* purple accent for edited card snapshots */
+.app-wrapper .history-card-detail.detail-create { border-left-color: #7ecc99; } /* green accent for created card snapshots */
+
+.app-wrapper .history-card-detail .detail-q { color: #b0b3e8; margin-bottom: 2px; } /* question text in snapshot: light purple */
+.app-wrapper .history-card-detail .detail-a { color: #7ec87e; } /* answer text in snapshot: green */
+.app-wrapper .detail-section-label { font-size: 11px; color: #6a6b99; text-transform: uppercase; letter-spacing: 1px; margin: 5px 0; } /* "Before" / "After" section headings in edit snapshots */
+
+.app-wrapper .detail-label { /* inline "Q" / "A" text labels inside history card snapshots */
+    font-size: 10px; /* very small */
+    font-weight: bold; /* bold */
+    letter-spacing: 1px; /* spread */
+    text-transform: uppercase; /* all caps */
+    margin-right: 5px; /* gap between label and text */
+}
+
+.app-wrapper .detail-label.q-label { color: #9a9de0; } /* question label: purple */
+.app-wrapper .detail-label.a-label { color: #5a9e5a; } /* answer label: green */
+
+.toast { /* fixed toast notification at the bottom of the screen */
+    position: fixed; /* fixed to the viewport */
+    bottom: 30px; /* distance from the bottom */
+    left: 50%; /* start at horizontal centre */
+    transform: translateX(-50%) translateY(10px); /* centre and slightly offset down for enter animation */
+    background: #4F517D; /* purple background */
+    padding: 10px 22px; /* pill padding */
+    border-radius: 8px; /* rounded corners */
+    font-size: 13px; /* label size */
+    opacity: 0; /* invisible by default */
+    transition: opacity 0.25s, transform 0.25s; /* smooth fade and slide animation */
+    pointer-events: none; /* ignore mouse events so clicks pass through */
+    z-index: 999; /* ensure it appears above all page content */
+}
+
+.toast.show { /* visible state of the toast */
+    opacity: 1; /* fade in */
+    transform: translateX(-50%) translateY(0); /* slide to final position */
+}
+
+.header-user { /* top-right user info bar: avatar, username, logout button */
+    position: fixed; /* fixed so it stays in the top-right corner when scrolling */
+    top: 16px; /* distance from the top of the viewport */
+    right: 24px; /* distance from the right edge */
+    display: flex; /* flex row */
+    align-items: center; /* vertically centre */
+    gap: 8px; /* space between avatar, name, and button */
+    z-index: 100; /* ensure it appears above page content */
+}
+
+.header-avatar { /* circular avatar showing the user's initial */
+    width: 30px; /* circle size */
+    height: 30px; /* equal height = circle */
+    border-radius: 50%; /* make it circular */
+    background: #3f4278; /* purple fill */
+    color: #c8caff; /* light purple initial */
+    display: flex; /* flex to centre the letter */
+    align-items: center; /* vertically centre */
+    justify-content: center; /* horizontally centre */
+    font-size: 13px; /* initial font size */
+    font-weight: bold; /* bold initial */
+    font-family: Verdana, sans-serif; /* consistent font */
+    flex-shrink: 0; /* don't shrink */
+}
+
+.header-username { /* username text next to the avatar */
+    font-size: 12px; /* small text */
+    color: #9a9de0; /* muted purple */
+    font-family: Verdana, sans-serif; /* consistent font */
+    max-width: 160px; /* cap width for long email addresses */
+    overflow: hidden; /* hide overflowing characters */
+    text-overflow: ellipsis; /* show "…" for truncated names */
+    white-space: nowrap; /* don't wrap the username */
+}
+
+.logout-btn { /* logout button in the top-right user bar */
+    padding: 6px 14px; /* compact padding */
+    background: transparent; /* transparent background */
+    color: #5a5c8a; /* muted grey text */
+    border: 1px solid #35386b; /* subtle dark purple border */
+    border-radius: 8px; /* rounded corners */
+    font-size: 12px; /* small label */
+    font-family: Verdana, sans-serif; /* consistent font */
+    cursor: pointer; /* hand cursor */
+    transition: border-color 0.2s, color 0.2s; /* smooth hover transition */
+}
+
+.logout-btn:hover { /* logout button hover: red warning colour */
+    border-color: #e06060; /* red border */
+    color: #e06060; /* red text */
 }

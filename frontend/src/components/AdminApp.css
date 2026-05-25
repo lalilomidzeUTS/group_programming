@@ -1,304 +1,539 @@
-* {
-  box-sizing: border-box;
+/* Styles for the Admin Dashboard page */
+
+* { /* universal reset applied to all elements on this page */
+  margin: 0; /* remove default browser margins */
+  padding: 0; /* remove default browser padding */
+  box-sizing: border-box; /* include padding and border in declared width/height values */
 }
 
-.admin-container {
-  display: flex;
-  height: 100vh;
-  background: #1a1628;
-  color: #ede9fb;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+body { /* base page styles */
+  font-family: Verdana, sans-serif; /* consistent font across the app */
+  background-color: #1a1b2e; /* dark navy page background */
+  color: #ffffff; /* white default text */
+  min-height: 100vh; /* fill the full viewport height */
+  display: flex; /* flex so the topbar + dashboard can fill the screen vertically */
+  flex-direction: column; /* stack topbar above dashboard */
 }
 
-/* ---- Sidebar ---- */
-
-.admin-sidebar {
-  width: 280px;
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.04);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.topbar { /* fixed navigation bar at the top of the admin dashboard */
+  background: #12132b; /* slightly darker than the page background */
+  border-bottom: 1px solid #3f4278; /* purple separator line */
+  padding: 14px 28px; /* comfortable vertical and horizontal padding */
+  display: flex; /* flex row for left/right sections */
+  align-items: center; /* vertically centre both sides */
+  justify-content: space-between; /* push left content and right content to opposite ends */
+  flex-shrink: 0; /* prevent the topbar from shrinking when the page content is tall */
 }
 
-.admin-sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 20px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+.topbar-left h1 { /* app title in the top-left */
+  font-size: 20px; /* compact heading size for a nav bar */
+  color: #fff; /* white text */
+  letter-spacing: 0.5px; /* slight spacing for the brand name */
 }
 
-.admin-sidebar-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #e8e2f8;
-  letter-spacing: -0.3px;
+.topbar-left h1 span { /* "Admin Dashboard" part of the title */
+  color: #9a9de0; /* purple accent to highlight the page name */
 }
 
-.admin-logout-btn {
-  padding: 6px 14px;
-  background: rgba(240, 128, 128, 0.12);
-  border: 1px solid rgba(240, 128, 128, 0.25);
-  border-radius: 8px;
-  color: #f08080;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
+.topbar-left p { /* subtitle below the heading */
+  font-size: 11px; /* small supporting text */
+  color: #6a6b99; /* muted grey-purple */
+  margin-top: 2px; /* small gap below the heading */
 }
 
-.admin-logout-btn:hover {
-  background: rgba(240, 128, 128, 0.22);
+.topbar-right { /* right side of the topbar: admin badge + logout */
+  display: flex; /* flex row */
+  align-items: center; /* vertically centre the badge and button */
+  gap: 10px; /* space between badge and button */
 }
 
-.admin-user-list {
-  list-style: none;
-  padding: 10px 0;
-  overflow-y: auto;
-  flex: 1;
+.admin-badge { /* "● ADMIN" pill label */
+  background: #4f517d; /* purple fill */
+  color: #c8caff; /* light purple text */
+  font-size: 11px; /* small label */
+  padding: 4px 12px; /* horizontal padding makes it look like a pill */
+  border-radius: 20px; /* fully rounded pill shape */
+  font-weight: bold; /* bold for emphasis */
+  letter-spacing: 0.5px; /* slight letter spacing */
 }
 
-.admin-user-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
-  cursor: pointer;
-  border-left: 3px solid transparent;
-  transition: background 0.15s, border-color 0.15s;
-  gap: 8px;
+.logout-btn { /* logout button in the topbar */
+  background: none; /* transparent background */
+  border: 1px solid #4f517d; /* purple border */
+  color: #9a9de0; /* purple text */
+  padding: 6px 14px; /* button padding */
+  border-radius: 8px; /* rounded corners */
+  cursor: pointer; /* hand cursor */
+  font-size: 12px; /* small button label */
+  font-family: Verdana, sans-serif; /* consistent font */
+  transition: border-color 0.2s, color 0.2s; /* smooth hover transition */
 }
 
-.admin-user-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+.logout-btn:hover { /* hover state for logout */
+  border-color: #e06060; /* red border on hover as a warning indicator */
+  color: #e06060; /* red text on hover */
 }
 
-.admin-user-item.active {
-  background: rgba(124, 85, 224, 0.15);
-  border-left-color: #7c55e0;
+.dashboard { /* two-column flex layout below the topbar */
+  display: flex; /* side-by-side sidebar + main */
+  flex: 1; /* take up all remaining vertical space after the topbar */
+  overflow: hidden; /* clip content; each column handles its own scroll */
+  height: calc(100vh - 57px); /* fill the viewport minus the topbar height */
 }
 
-.admin-user-name {
-  font-size: 14px;
-  color: rgba(220, 210, 245, 0.85);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.sidebar { /* left panel listing all registered users */
+  width: 260px; /* fixed sidebar width */
+  min-width: 260px; /* prevent the sidebar from shrinking below its set width */
+  background: #12132b; /* darker background than the main content area */
+  border-right: 1px solid #3f4278; /* vertical dividing line */
+  display: flex; /* flex column for header + scrollable list */
+  flex-direction: column; /* stack header above list */
+  overflow: hidden; /* clip overflowing content */
 }
 
-.admin-user-item.active .admin-user-name {
-  color: #c4aff5;
-  font-weight: 600;
+.sidebar-head { /* fixed header section at the top of the sidebar */
+  padding: 16px 18px 12px; /* top, horizontal, and reduced bottom padding */
+  border-bottom: 1px solid #3f4278; /* separator between header and list */
 }
 
-.admin-you-badge {
-  flex-shrink: 0;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: #7c55e0;
-  background: rgba(124, 85, 224, 0.18);
-  border: 1px solid rgba(124, 85, 224, 0.3);
-  border-radius: 4px;
-  padding: 2px 6px;
+.sidebar-head h2 { /* "Registered Users" section heading */
+  font-size: 11px; /* small all-caps label style */
+  color: #6a6b99; /* muted grey-purple */
+  text-transform: uppercase; /* all caps */
+  letter-spacing: 1.2px; /* spread for the label style */
+  margin-bottom: 10px; /* space below before the search input */
 }
 
-/* ---- Main panel ---- */
-
-.admin-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.user-search { /* search input for filtering the user list */
+  width: 100%; /* fill the sidebar header */
+  padding: 9px 12px; /* comfortable input padding */
+  background: #1e2040; /* darker input background */
+  border: 1px solid #3f4278; /* purple border */
+  border-radius: 8px; /* rounded corners */
+  color: #fff; /* white text */
+  font-size: 13px; /* slightly smaller than body */
+  font-family: Verdana, sans-serif; /* consistent font */
+  outline: none; /* remove default focus ring */
+  transition: border-color 0.2s; /* smooth focus highlight */
 }
 
-.admin-main-header {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 28px 32px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+.user-search:focus { /* focus state for the search input */
+  border-color: #7b7ec7; /* bright purple border on focus */
 }
 
-.admin-main-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #ede9fb;
-  letter-spacing: -0.3px;
+.user-search::placeholder { /* placeholder text in the search box */
+  color: #5a5c8a; /* muted grey-purple */
 }
 
-.admin-card-count {
-  font-size: 13px;
-  color: rgba(200, 185, 235, 0.45);
+.user-count { /* "N users registered" line below the search input */
+  font-size: 11px; /* small supporting text */
+  color: #6a6b99; /* muted grey-purple */
+  margin-top: 8px; /* space above the count */
 }
 
-.admin-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(200, 185, 235, 0.35);
-  font-size: 15px;
+.user-list { /* scrollable container for the user rows */
+  flex: 1; /* fill remaining sidebar height */
+  overflow-y: auto; /* enable vertical scrolling when the list is long */
+  padding: 8px 0; /* small vertical padding inside the list */
 }
 
-/* ---- Card list ---- */
-
-.admin-card-list {
-  list-style: none;
-  padding: 20px 32px;
-  overflow-y: auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.user-list::-webkit-scrollbar { /* custom scrollbar for WebKit browsers */
+  width: 4px; /* narrow scrollbar */
 }
 
-.admin-card-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 16px;
-  transition: border-color 0.2s;
+.user-list::-webkit-scrollbar-track { /* scrollbar track (background) */
+  background: transparent; /* invisible track */
 }
 
-.admin-card-item:hover {
-  border-color: rgba(124, 85, 224, 0.3);
+.user-list::-webkit-scrollbar-thumb { /* scrollbar thumb (draggable indicator) */
+  background: #3f4278; /* purple thumb */
+  border-radius: 4px; /* rounded thumb */
 }
 
-/* ---- Flashcard flip ---- */
-
-.admin-flashcard {
-  flex: 1;
-  cursor: pointer;
-  min-height: 72px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.user-item { /* a single user row in the sidebar list */
+  display: flex; /* flex row for avatar + name */
+  align-items: center; /* vertically centre avatar and text */
+  gap: 12px; /* space between avatar and text */
+  padding: 11px 18px; /* vertical and horizontal padding */
+  cursor: pointer; /* hand cursor indicating it's clickable */
+  transition: background 0.15s; /* quick hover background transition */
+  border-left: 3px solid transparent; /* invisible left border that becomes purple when active */
 }
 
-.admin-flashcard-front,
-.admin-flashcard-back {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.user-item:hover { /* hover state for user rows */
+  background: #1e2040; /* slightly lighter background on hover */
 }
 
-.admin-flashcard-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: rgba(180, 165, 215, 0.4);
+.user-item.active { /* selected/active user row */
+  background: #1e2040; /* same background as hover to maintain it */
+  border-left-color: #7b7ec7; /* bright purple left border to indicate selection */
 }
 
-.admin-flashcard-text {
-  font-size: 15px;
-  color: #ede9fb;
-  line-height: 1.4;
+.user-avatar { /* circular avatar showing the user's initials */
+  width: 36px; /* avatar circle width */
+  height: 36px; /* avatar circle height */
+  border-radius: 50%; /* make it circular */
+  display: flex; /* flex to centre initials */
+  align-items: center; /* vertically centre */
+  justify-content: center; /* horizontally centre */
+  font-size: 13px; /* initials font size */
+  font-weight: bold; /* bold initials */
+  flex-shrink: 0; /* prevent avatar from shrinking when user name is long */
 }
 
-/* ---- Actions ---- */
-
-.admin-card-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex-shrink: 0;
+.user-info { /* text block next to the avatar */
+  min-width: 0; /* allow text to truncate when the container is narrow */
+  flex: 1; /* fill remaining row width */
 }
 
-.admin-icon-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+.user-info .user-name { /* the username text inside a user row */
+  font-size: 13px; /* body text size */
+  font-weight: bold; /* bold username */
+  color: #fff; /* white text */
+  white-space: nowrap; /* prevent the name from wrapping */
+  overflow: hidden; /* hide overflowing characters */
+  text-overflow: ellipsis; /* show "…" when the name is too long */
 }
 
-.admin-icon-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+.user-info .user-meta { /* card count shown below the name for the selected user */
+  font-size: 11px; /* small supporting text */
+  color: #6a6b99; /* muted grey-purple */
+  margin-top: 2px; /* small gap below the name */
 }
 
-.admin-icon-btn.edit {
-  background: rgba(124, 85, 224, 0.12);
-  border-color: rgba(124, 85, 224, 0.2);
-  color: #9d7fe0;
+.user-item.active .user-name { /* username text when the row is selected */
+  color: #c8caff; /* brighter purple-white for the active row */
 }
 
-.admin-icon-btn.edit:hover:not(:disabled) {
-  background: rgba(124, 85, 224, 0.22);
+.main { /* main content area to the right of the sidebar */
+  flex: 1; /* fill all horizontal space not taken by the sidebar */
+  display: flex; /* flex column for header + tabs + content */
+  flex-direction: column; /* stack vertically */
+  overflow: hidden; /* clip; .content handles its own scrolling */
+  background: #1a1b2e; /* page background colour */
 }
 
-.admin-icon-btn.delete {
-  background: rgba(240, 128, 128, 0.1);
-  border-color: rgba(240, 128, 128, 0.2);
-  color: #f08080;
+.no-user { /* empty state shown when no user is selected */
+  flex: 1; /* fill the main area */
+  display: flex; /* flex to centre the icon and text */
+  flex-direction: column; /* stack icon above text */
+  align-items: center; /* horizontally centre */
+  justify-content: center; /* vertically centre */
+  color: #6a6b99; /* muted grey-purple */
+  gap: 12px; /* space between icon and text */
 }
 
-.admin-icon-btn.delete:hover:not(:disabled) {
-  background: rgba(240, 128, 128, 0.2);
+.no-user .icon { /* person emoji in the empty state */
+  font-size: 48px; /* large emoji */
+  opacity: 0.3; /* fade the icon for a subtle effect */
 }
 
-.admin-icon-btn.save {
-  background: rgba(80, 200, 140, 0.12);
-  border-color: rgba(80, 200, 140, 0.2);
-  color: #50c88c;
+.no-user p { /* instruction text in the empty state */
+  font-size: 14px; /* readable body size */
 }
 
-.admin-icon-btn.save:hover {
-  background: rgba(80, 200, 140, 0.22);
+.user-header { /* header bar at the top of the main area when a user is selected */
+  background: #12132b; /* darker background to match the topbar and sidebar */
+  border-bottom: 1px solid #3f4278; /* separator */
+  padding: 16px 24px; /* vertical and horizontal padding */
+  display: flex; /* flex row: user info on left, stats on right */
+  align-items: center; /* vertically centre both sides */
+  justify-content: space-between; /* push info and stats apart */
+  flex-shrink: 0; /* prevent this header from shrinking */
 }
 
-.admin-icon-btn.cancel {
-  background: rgba(240, 128, 128, 0.1);
-  border-color: rgba(240, 128, 128, 0.2);
-  color: #f08080;
+.user-header-left { /* left side of user header: avatar + username */
+  display: flex; /* flex row */
+  align-items: center; /* vertically centre */
+  gap: 14px; /* space between avatar and username */
 }
 
-.admin-icon-btn.cancel:hover {
-  background: rgba(240, 128, 128, 0.2);
+.user-header-avatar { /* larger avatar in the user header */
+  width: 44px; /* slightly bigger than sidebar avatars */
+  height: 44px; /* equal width and height for circle */
+  border-radius: 50%; /* circle */
+  display: flex; /* centre initials */
+  align-items: center; /* vertically centre */
+  justify-content: center; /* horizontally centre */
+  font-size: 16px; /* larger initials */
+  font-weight: bold; /* bold */
+  flex-shrink: 0; /* don't shrink */
 }
 
-/* ---- Edit mode ---- */
-
-.admin-edit-mode {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
+.user-header-info h2 { /* username heading in the user header */
+  font-size: 17px; /* medium heading size */
+  font-weight: bold; /* bold */
+  color: #fff; /* white */
 }
 
-.admin-edit-inputs {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
+.user-header-info p { /* email or subtitle below the username (currently unused) */
+  font-size: 12px; /* small supporting text */
+  color: #6a6b99; /* muted */
+  margin-top: 3px; /* gap below heading */
 }
 
-.admin-edit-input {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 9px 12px;
-  color: #ede9fb;
-  font-size: 14px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+.stats-row { /* row of stat boxes in the user header */
+  display: flex; /* flex row */
+  gap: 10px; /* space between boxes */
 }
 
-.admin-edit-input:focus {
-  border-color: rgba(124, 85, 224, 0.5);
-  box-shadow: 0 0 0 3px rgba(124, 85, 224, 0.12);
+.stat-box { /* individual stat box showing a number and label */
+  background: #2a2d52; /* slightly lighter navy */
+  border: 1px solid #3f4278; /* purple border */
+  border-radius: 8px; /* rounded corners */
+  padding: 6px 14px; /* compact padding */
+  text-align: center; /* centre number and label */
+  min-width: 70px; /* minimum width so small numbers don't make tiny boxes */
+}
+
+.stat-box .stat-number { /* the large number inside a stat box */
+  font-size: 18px; /* prominent number size */
+  font-weight: bold; /* bold */
+  color: #fff; /* white */
+}
+
+.stat-box .stat-label { /* the small label below the number */
+  font-size: 10px; /* small all-caps label */
+  color: #6a6b99; /* muted */
+  text-transform: uppercase; /* all caps */
+  letter-spacing: 0.8px; /* slight spacing */
+  margin-top: 1px; /* gap below number */
+}
+
+.main .tabs { /* tab bar below the user header */
+  display: flex; /* flex row of tab buttons */
+  justify-content: flex-start; /* align tabs to the left */
+  gap: 6px; /* space between tab buttons */
+  background: #12132b; /* darker background matching the header */
+  border-bottom: 1px solid #3f4278; /* separator */
+  padding: 10px 20px; /* padding inside the tab bar */
+  flex-shrink: 0; /* prevent tab bar from shrinking */
+}
+
+.main .tab-btn { /* individual tab button */
+  padding: 8px 20px; /* button padding */
+  background: none; /* transparent by default */
+  border: 1px solid transparent; /* invisible border that appears on hover/active */
+  border-radius: 8px; /* rounded corners */
+  color: #6a6b99; /* muted grey-purple text */
+  font-size: 13px; /* tab label size */
+  font-family: Verdana, sans-serif; /* consistent font */
+  font-weight: bold; /* bold labels */
+  cursor: pointer; /* hand cursor */
+  transition: background 0.2s, color 0.2s, border-color 0.2s; /* smooth state transitions */
+  white-space: nowrap; /* prevent label from wrapping */
+}
+
+.main .tab-btn:hover { /* hover state for tab buttons */
+  color: #c8caff; /* brighter purple-white text */
+  background: #1e2040; /* subtle highlight background */
+  border-color: #3f4278; /* visible purple border on hover */
+}
+
+.main .tab-btn.active { /* active (selected) tab button */
+  color: #c8caff; /* bright text */
+  background: #2a2d52; /* filled background to indicate selection */
+  border-color: #4f517d; /* brighter purple border */
+}
+
+.content { /* scrollable main content below the tabs */
+  flex: 1; /* fill remaining vertical space */
+  overflow-y: auto; /* enable vertical scrolling */
+  padding: 20px 24px; /* padding around the card/history list */
+}
+
+.content::-webkit-scrollbar { /* custom scrollbar for the content area */
+  width: 4px; /* narrow */
+}
+
+.content::-webkit-scrollbar-track { /* scrollbar track */
+  background: transparent; /* invisible */
+}
+
+.content::-webkit-scrollbar-thumb { /* scrollbar thumb */
+  background: #3f4278; /* purple */
+  border-radius: 4px; /* rounded */
+}
+
+.content .card-item { /* a single flashcard item in the admin card list */
+  background: #2a2d52; /* card background */
+  border: 1px solid #3f4278; /* purple border */
+  border-radius: 12px; /* rounded corners */
+  padding: 14px 18px; /* internal padding */
+  margin-bottom: 10px; /* gap between cards */
+  display: flex; /* flex row: card text + action buttons */
+  align-items: flex-start; /* align items to the top */
+  justify-content: space-between; /* push text and buttons apart */
+  gap: 14px; /* space between text and buttons */
+  transition: border-color 0.2s; /* smooth hover border transition */
+}
+
+.content .card-item:hover { border-color: #5a5c8a; } /* subtly brighten the border on hover */
+.content .card-item.editing { border-color: #7b7ec7; background: #1e2040; } /* bright purple border and darker background when the card is in edit mode */
+
+.content .card-texts { flex: 1; min-width: 0; } /* text block grows to fill available space; min-width:0 allows truncation */
+
+.content .card-field { /* a single question or answer row inside a card */
+  display: flex; /* flex row: label badge + text */
+  align-items: baseline; /* align badge and text on their text baselines */
+  gap: 8px; /* space between badge and text */
+  margin-bottom: 5px; /* gap between question row and answer row */
+}
+
+.content .card-field:last-child { margin-bottom: 0; } /* remove bottom margin from the last field to avoid extra space */
+
+.content .field-label { /* "Q" or "A" badge labels */
+  font-size: 10px; /* small label */
+  font-weight: bold; /* bold */
+  letter-spacing: 1.2px; /* spread for the badge style */
+  text-transform: uppercase; /* all caps */
+  padding: 2px 7px; /* compact padding */
+  border-radius: 4px; /* slightly rounded */
+  flex-shrink: 0; /* don't shrink; always show the full badge */
+  line-height: 1.6; /* generous line height so the badge isn't too squat */
+}
+
+.content .q-label { background: #3f4278; color: #b0b3e8; } /* question badge: purple background, light purple text */
+.content .a-label { background: #2e3a2e; color: #7ec87e; } /* answer badge: dark green background, green text */
+
+.content .card-q-text { font-size: 14px; color: #fff; word-break: break-word; } /* question text: white, wraps long words */
+.content .card-a-text { font-size: 13px; color: #9a9de0; word-break: break-word; } /* answer text: muted purple, slightly smaller, wraps */
+
+.content .card-actions { display: flex; gap: 8px; flex-shrink: 0; } /* action button group; doesn't shrink so buttons are always visible */
+
+.content .btn-edit, /* shared styles for all four action buttons in the card list */
+.content .btn-del,
+.content .btn-save,
+.content .btn-cancel-edit {
+  padding: 6px 13px; /* compact padding */
+  border-radius: 6px; /* rounded corners */
+  font-size: 12px; /* small label */
+  font-weight: bold; /* bold */
+  font-family: Verdana, sans-serif; /* consistent font */
+  cursor: pointer; /* hand cursor */
+  transition: all 0.2s; /* smooth hover transitions */
+  border: 1px solid; /* border colour is set per button below */
+}
+
+.content .btn-edit { background: none; color: #9a9de0; border-color: #4f517d; } /* Edit button: transparent background, purple text and border */
+.content .btn-edit:hover { background: #3f4278; color: #fff; } /* Edit hover: fill with purple background */
+.content .btn-del { background: none; color: #ff6b6b; border-color: #6b2e2e; } /* Delete button: red text, dark red border */
+.content .btn-del:hover { background: #6b2e2e; color: #ffaaaa; } /* Delete hover: fill with dark red */
+.content .btn-save { background: #4f517d; color: #fff; border-color: #4f517d; } /* Save button: filled purple */
+.content .btn-save:hover { background: #6264a0; } /* Save hover: brighter purple */
+.content .btn-cancel-edit { background: none; color: #6a6b99; border-color: #3f4278; } /* Cancel button: muted with purple border */
+.content .btn-cancel-edit:hover { color: #fff; border-color: #7b7ec7; } /* Cancel hover: white text, brighter border */
+
+.content .inline-edit-input { /* input fields shown inside the card when editing */
+  width: 100%; /* fill the card text area */
+  padding: 7px 10px; /* compact padding */
+  background: #2a2d52; /* card-matching background */
+  border: 1px solid #3f4278; /* purple border */
+  border-radius: 7px; /* rounded */
+  color: #fff; /* white text */
+  font-size: 13px; /* slightly smaller than card text */
+  font-family: Verdana, sans-serif; /* consistent font */
+  outline: none; /* remove default focus outline */
+  margin-bottom: 6px; /* gap between the two edit inputs */
+  transition: border-color 0.2s; /* smooth focus highlight */
+}
+
+.content .inline-edit-input:focus { border-color: #7b7ec7; } /* bright purple border when the edit input is focused */
+
+.content .empty-state { /* placeholder shown when there are no cards or history items */
+  text-align: center; /* centre the message */
+  padding: 48px 20px; /* generous padding so it doesn't look squeezed */
+  color: #6a6b99; /* muted grey-purple */
+  font-size: 13px; /* small text */
+}
+
+.content .history-item { /* a single event card in the history tab */
+  background: #2a2d52; /* card background */
+  border: 1px solid #3f4278; /* purple border */
+  border-radius: 12px; /* rounded corners */
+  padding: 14px 18px; /* internal padding */
+  margin-bottom: 10px; /* gap between events */
+}
+
+.content .history-row { /* flex row inside a history item: title/date on the left, badge on the right */
+  display: flex; /* flex row */
+  align-items: flex-start; /* align to top */
+  justify-content: space-between; /* push apart */
+  gap: 10px; /* space between content and badge */
+  margin-bottom: 10px; /* gap below the row before the detail block */
+}
+
+.content .history-row h4 { font-size: 13px; color: #fff; margin-bottom: 3px; } /* event type heading */
+.content .history-date { font-size: 11px; color: #6a6b99; } /* event timestamp text */
+
+.content .hist-badge { /* event type badge pill */
+  font-size: 11px; /* small label */
+  font-weight: bold; /* bold */
+  padding: 4px 12px; /* pill padding */
+  border-radius: 20px; /* fully rounded */
+  white-space: nowrap; /* don't wrap the label */
+  flex-shrink: 0; /* don't shrink */
+  letter-spacing: 0.4px; /* slight spacing */
+}
+
+.content .hb-create { background: #1e4a2e; color: #7ec87e; } /* Created badge: dark green background, green text */
+.content .hb-edit { background: #3a3a6b; color: #aaaaf8; } /* Edited badge: dark purple, light purple text */
+.content .hb-delete { background: #6b2e2e; color: #ffaaaa; } /* Deleted badge: dark red, light red text */
+
+.content .history-detail { /* the card snapshot block below the event title */
+  background: #1e2040; /* darker background to distinguish from the event card */
+  border-radius: 8px; /* rounded corners */
+  padding: 10px 14px; /* compact padding */
+  font-size: 12px; /* small text */
+  border-left: 3px solid #3f4278; /* left accent border (colour overridden per event type below) */
+}
+
+.content .history-detail.det-create { border-left-color: #7ec87e; } /* green accent for creation events */
+.content .history-detail.det-delete { border-left-color: #ff6b6b; } /* red accent for deletion events */
+.content .history-detail.det-edit { border-left-color: #7b7ec7; } /* purple accent for edit events */
+
+.content .det-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px; } /* a single Q/A row inside the detail block */
+.content .det-row:last-child { margin-bottom: 0; } /* remove bottom margin from the last row */
+
+.content .det-section-label { /* "Before" / "After" section headings inside edit event details */
+  font-size: 10px; /* very small label */
+  color: #6a6b99; /* muted */
+  text-transform: uppercase; /* all caps */
+  letter-spacing: 1px; /* spread */
+  margin-bottom: 5px; /* gap below before the Q/A rows */
+  margin-top: 8px; /* gap above to separate sections */
+  font-weight: bold; /* bold */
+}
+
+.content .det-section-label:first-child { margin-top: 0; } /* no top margin for the very first section label */
+.content .det-q { color: #b0b3e8; } /* question text in history detail: light purple */
+.content .det-a { color: #7ec87e; } /* answer text in history detail: green */
+
+.toast { /* fixed toast notification shown at the bottom of the screen */
+  position: fixed; /* fixed to the viewport so it's always visible */
+  bottom: 28px; /* distance from the bottom of the viewport */
+  left: 50%; /* start at horizontal centre */
+  transform: translateX(-50%) translateY(10px); /* centre horizontally and slightly offset down for the enter animation */
+  background: #4f517d; /* purple background */
+  padding: 10px 22px; /* pill-like padding */
+  border-radius: 8px; /* rounded corners */
+  font-size: 13px; /* readable label */
+  opacity: 0; /* invisible by default */
+  transition: opacity 0.25s, transform 0.25s; /* smooth fade and slide animation */
+  pointer-events: none; /* ignore mouse events so clicks pass through to the content below */
+  z-index: 999; /* ensure the toast is above all other content */
+  white-space: nowrap; /* don't wrap the message */
+}
+
+.toast.show { /* visible state of the toast */
+  opacity: 1; /* fade in */
+  transform: translateX(-50%) translateY(0); /* slide up to final position */
+}
+
+.no-users-msg { /* message shown in the sidebar when the user list is empty, loading, or failed */
+  text-align: center; /* centre the message */
+  padding: 30px 18px; /* comfortable padding */
+  color: #6a6b99; /* muted grey-purple */
+  font-size: 12px; /* small text */
+  line-height: 1.7; /* generous line height for two-line messages */
 }

@@ -1,121 +1,132 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import ASCENDING
-from typing import List, Optional
-from dotenv import load_dotenv
-import os
-import certifi
+from motor.motor_asyncio import AsyncIOMotorClient  # Motor is the async MongoDB driver; AsyncIOMotorClient is the async-compatible connection class
+from pymongo import ASCENDING  # ASCENDING constant (value 1) used when specifying ascending index sort order
+from typing import List, Optional  # List for typed list return values, Optional for fields that may be None
+from dotenv import load_dotenv  # reads a .env file and populates os.environ with its key=value pairs
+import os  # standard library module for reading environment variables
+import certifi  # provides the path to Mozilla's CA certificate bundle so TLS connections to MongoDB Atlas verify correctly
 
-load_dotenv()
+load_dotenv()  # load .env into os.environ before any getenv calls execute
 
 # MongoDB connection
-MONGODB_URL = os.getenv("MONGODB_URL")
-DATABASE_NAME = os.getenv("DATABASE_NAME")
-COLLECTION_NAME = os.getenv("COLLECTION_NAME")
-USERS_COLLECTION_NAME = os.getenv("USERS_COLLECTION_NAME")
+MONGODB_URL = os.getenv("MONGODB_URL")  # full MongoDB connection string, e.g. mongodb+srv://user:pass@cluster.mongodb.net
+DATABASE_NAME = os.getenv("DATABASE_NAME")  # name of the MongoDB database to use
+COLLECTION_NAME = os.getenv("COLLECTION_NAME")  # name of the collection that stores flashcard documents
+USERS_COLLECTION_NAME = os.getenv("USERS_COLLECTION_NAME")  # name of the collection that stores user account documents
+HISTORY_COLLECTION_NAME = os.getenv("HISTORY_COLLECTION_NAME", "history")  # name of the history collection; falls back to "history" if the variable is missing
 
-client: AsyncIOMotorClient = None
-db = None
-users_collection = None
-
-
-async def connect_to_mongo():
-    global client, db, users_collection
-    client = AsyncIOMotorClient(MONGODB_URL, tlsCAFile=certifi.where())
-    db = client[DATABASE_NAME]
-    await db[COLLECTION_NAME].create_index([("id", ASCENDING)], unique=True)
-    users_collection = db[USERS_COLLECTION_NAME]
-    print(f"Connected to MongoDB: {DATABASE_NAME}")
+client: AsyncIOMotorClient = None  # global Motor client instance; None until connect_to_mongo() runs
+db = None  # global database handle; assigned after the client connects
+flashcards_collection = None  # global reference to the flashcards collection; assigned after connecting
+users_collection = None  # global reference to the users collection; assigned after connecting
+history_collection = None  # global reference to the history collection; assigned after connecting
 
 
-async def close_mongo_connection():
-    global client
-    if client:
-        client.close()
-        print("Closed MongoDB connection")
+async def connect_to_mongo():  # opens the Motor connection pool and sets up all collection references
+    global client, db, flashcards_collection, users_collection, history_collection  # declare the globals we intend to modify inside this function
+    client = AsyncIOMotorClient(MONGODB_URL, tlsCAFile=certifi.where())  # create the async client; tlsCAFile enables TLS peer verification against the Mozilla CA bundle
+    db = client[DATABASE_NAME]  # select the target database by name from the connected client
+    flashcards_collection = db[COLLECTION_NAME]  # get a handle to the flashcards collection
+    await flashcards_collection.create_index([("id", ASCENDING)], unique=True)  # create a unique index on the "id" field so duplicate flashcard IDs are rejected at the database level
+    users_collection = db[USERS_COLLECTION_NAME]  # get a handle to the users collection
+    history_collection = db[HISTORY_COLLECTION_NAME]  # get a handle to the history collection
+    print(f"Connected to MongoDB: {DATABASE_NAME}")  # log confirmation so server startup output shows the DB name
 
 
-class Flashcard:
-    def __init__(self, id: str, question: str, answer: str, isFlipped: bool = False, user_id: str = None):
-        self.id = id
-        self.question = question
-        self.answer = answer
-        self.isFlipped = isFlipped
-        self.user_id = user_id
+async def close_mongo_connection():  # cleanly shuts down the Motor client and its connection pool
+    global client  # reference the global client so we can close it
+    if client:  # guard: only close if the client was successfully created (startup might have failed)
+        client.close()  # close all sockets in the connection pool
+        print("Closed MongoDB connection")  # log confirmation so shutdown output is informative
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "question": self.question,
-            "answer": self.answer,
-            "isFlipped": self.isFlipped,
-            "user_id": self.user_id,
+
+class Flashcard:  # internal data model representing a single flashcard; used by all CRUD helper functions
+    def __init__(self, id: str, question: str, answer: str, isFlipped: bool = False, user_id: str = None):  # initialise all flashcard fields
+        self.id = id  # unique string ID for this card (generated by the frontend as a timestamp string)
+        self.question = question  # the question text displayed on the front of the card
+        self.answer = answer  # the answer text displayed on the back of the card
+        self.isFlipped = isFlipped  # tracks whether the card is currently showing its answer; defaults to False
+        self.user_id = user_id  # the username of the card's owner; None if not yet assigned
+
+    def to_dict(self):  # converts this Flashcard into a plain dict ready to be inserted into MongoDB
+        return {  # return a dictionary containing every field
+            "id": self.id,  # the card's unique ID
+            "question": self.question,  # the question text
+            "answer": self.answer,  # the answer text
+            "isFlipped": self.isFlipped,  # the current flip state
+            "user_id": self.user_id,  # the owner's username
         }
 
-    @staticmethod
-    def from_dict(data):
-        return Flashcard(
-            id=data.get("id"),
-            question=data.get("question"),
-            answer=data.get("answer"),
-            isFlipped=data.get("isFlipped", False),
-            user_id=data.get("user_id"),
+    @staticmethod  # this method doesn't need self or cls; it's a factory that creates a Flashcard from a dict
+    def from_dict(data):  # builds a Flashcard instance from a raw MongoDB document dictionary
+        return Flashcard(  # construct and return a new Flashcard
+            id=data.get("id"),  # read the "id" field; None if absent
+            question=data.get("question"),  # read the "question" field
+            answer=data.get("answer"),  # read the "answer" field
+            isFlipped=data.get("isFlipped", False),  # read "isFlipped"; default False if the field is missing
+            user_id=data.get("user_id"),  # read the "user_id" field; None if absent
         )
 
 
 # CRUD operations
 
-async def db_create_flashcard(flashcard: "Flashcard") -> "Flashcard":
-    collection = db[COLLECTION_NAME]
-    await collection.insert_one(flashcard.to_dict())
-    return flashcard
+async def db_create_flashcard(flashcard: "Flashcard") -> "Flashcard":  # inserts a new flashcard document and returns the same object
+    await flashcards_collection.insert_one(flashcard.to_dict())  # convert to dict and insert; raises DuplicateKeyError if the id already exists
+    return flashcard  # return the original object unchanged (the DB doesn't modify any fields on insert)
 
 
-async def db_get_flashcard(flashcard_id: str) -> Optional["Flashcard"]:
-    collection = db[COLLECTION_NAME]
-    data = await collection.find_one({"id": flashcard_id})
-    if data:
-        data.pop("_id", None)
-        return Flashcard.from_dict(data)
-    return None
+async def db_get_flashcard(flashcard_id: str) -> Optional["Flashcard"]:  # looks up one flashcard by its app-level "id" field; returns None if not found
+    data = await flashcards_collection.find_one({"id": flashcard_id})  # query by the custom "id" field, not MongoDB's "_id"
+    if data:  # a matching document was found
+        data.pop("_id", None)  # MongoDB auto-adds "_id"; remove it so it doesn't leak into the Flashcard object
+        return Flashcard.from_dict(data)  # convert the document dict to a Flashcard and return it
+    return None  # no document matched the given flashcard_id
 
 
-async def db_get_flashcards(user_id: str = None, skip: int = 0, limit: int = 100) -> List["Flashcard"]:
+async def db_get_flashcards(user_id: str = None, skip: int = 0, limit: int = 100) -> List["Flashcard"]:  # retrieves a paginated list of flashcards, optionally filtered by owner
     """Fetch flashcards. Pass user_id to filter by owner; omit for all cards (admin)."""
-    collection = db[COLLECTION_NAME]
-    query = {"user_id": user_id} if user_id else {}
-    cursor = collection.find(query).skip(skip).limit(limit)
-    flashcards = []
-    async for data in cursor:
-        data.pop("_id", None)
-        flashcards.append(Flashcard.from_dict(data))
-    return flashcards
+    query = {"user_id": user_id} if user_id else {}  # filter by owner when user_id is provided; empty dict means no filter (return all)
+    cursor = flashcards_collection.find(query).skip(skip).limit(limit)  # build the async cursor with query, pagination offset, and record cap
+    flashcards = []  # list to collect the results
+    async for data in cursor:  # iterate asynchronously over each document in the cursor
+        data.pop("_id", None)  # strip MongoDB's internal "_id" before converting to a Flashcard
+        flashcards.append(Flashcard.from_dict(data))  # convert each document to a Flashcard and add to the list
+    return flashcards  # return the complete list of Flashcard objects
 
 
-async def db_update_flashcard(flashcard_id: str, flashcard_update: "Flashcard", user_id: str = None) -> Optional["Flashcard"]:
+async def db_update_flashcard(flashcard_id: str, flashcard_update: "Flashcard", user_id: str = None) -> Optional["Flashcard"]:  # replaces a flashcard's fields; enforces ownership when user_id is given
     """Update a flashcard. Pass user_id to enforce ownership; omit for admin updates."""
-    collection = db[COLLECTION_NAME]
-    query = {"id": flashcard_id}
-    if user_id:
-        query["user_id"] = user_id
-    result = await collection.update_one(query, {"$set": flashcard_update.to_dict()})
-    if result.matched_count == 0:
-        return None
-    return await db_get_flashcard(flashcard_id)
+    query = {"id": flashcard_id}  # start with a query that matches by the app-level ID
+    if user_id:  # if an ownership filter was provided
+        query["user_id"] = user_id  # add it so regular users can only update their own cards
+    result = await flashcards_collection.update_one(query, {"$set": flashcard_update.to_dict()})  # apply the update; $set overwrites all fields with the new values
+    if result.matched_count == 0:  # no document matched the query (card not found or wrong owner)
+        return None  # tell the caller the update did not happen
+    return await db_get_flashcard(flashcard_id)  # re-fetch the updated document and return it as a Flashcard
 
 
-async def db_delete_flashcard(flashcard_id: str, user_id: str = None) -> bool:
+async def db_delete_flashcard(flashcard_id: str, user_id: str = None) -> bool:  # removes a flashcard; returns True if deleted, False if not found or not owned
     """Delete a flashcard. Pass user_id to enforce ownership; omit for admin deletes."""
-    collection = db[COLLECTION_NAME]
-    query = {"id": flashcard_id}
-    if user_id:
-        query["user_id"] = user_id
-    result = await collection.delete_one(query)
-    return result.deleted_count > 0
+    query = {"id": flashcard_id}  # build the base query matching the card's app-level ID
+    if user_id:  # if ownership enforcement is required
+        query["user_id"] = user_id  # restrict the delete to the card's owner only
+    result = await flashcards_collection.delete_one(query)  # attempt to delete the matching document
+    return result.deleted_count > 0  # True means a document was found and deleted; False means nothing matched
 
 
-async def db_get_all_users() -> List[str]:
+async def db_log_history(event: dict) -> None:  # writes a single audit event (create/edit/delete) to the history collection
+    await history_collection.insert_one(event)  # insert the event dict as a new document; no return value is needed
+
+
+async def db_get_history(user_id: str) -> List[dict]:  # retrieves all history events for a given user, sorted newest-first
+    events = []  # accumulator list for the history documents
+    async for doc in history_collection.find({"user_id": user_id}, {"_id": 0}).sort("date", -1):  # query filtered by user, exclude MongoDB's "_id", order by date descending
+        events.append(doc)  # collect each event document as a plain dict
+    return events  # return the full list of history events for this user
+
+
+async def db_get_all_users() -> List[str]:  # returns a flat list of every registered username; used by the admin dashboard
     """Return a list of all usernames."""
-    usernames = []
-    async for user in users_collection.find({}, {"_id": 0, "username": 1}):
-        usernames.append(user["username"])
-    return usernames
+    usernames = []  # accumulator list for the username strings
+    async for user in users_collection.find({}, {"_id": 0, "username": 1}):  # project only the "username" field and exclude "_id" to keep responses minimal
+        usernames.append(user["username"])  # extract the username string from each document and add it to the list
+    return usernames  # return the complete list of usernames
