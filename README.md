@@ -22,6 +22,10 @@ The history section within the user's flashcard app allows the user to view thei
 
 The logged in admins have access to all the registered user flashcards and have access to delete them if they wish to do so or edit them. The admin could view every user's flashcard edits, deletions, or created history in the history section of the selected users in the admin's dashboard. The admin could find a specific user by searching for the user's email and find him easily in case there are a lot of registered users.
 
+## User Registration
+
+The user can create an account before logging in by clicking on create one during the log in process and the user will be directed to a new registration page so that the user can add his fullname, email, and craete a strong password once the user is staisfied the user can proceed with clicking on create account button the is listed on the bottom of the page.
+
 ## Stack Components
 
 | Layer | Technology |
