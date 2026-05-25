@@ -171,19 +171,20 @@ export default function AdminApp() {
                     ) : (
                       <>
                         <div
-                          className={`admin-flashcard ${card.isFlipped ? 'flipped' : ''}`}
+                          className="admin-flashcard"
                           onClick={() => flipCard(card.id)}
                         >
-                          <div className="admin-flashcard-inner">
-                            <div className="admin-flashcard-front">
-                              <span className="admin-flashcard-label">Question</span>
-                              <p className="admin-flashcard-text">{card.question}</p>
-                            </div>
+                          {card.isFlipped ? (
                             <div className="admin-flashcard-back">
                               <span className="admin-flashcard-label">Answer</span>
                               <p className="admin-flashcard-text">{card.answer}</p>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="admin-flashcard-front">
+                              <span className="admin-flashcard-label">Question</span>
+                              <p className="admin-flashcard-text">{card.question}</p>
+                            </div>
+                          )}
                         </div>
                         <div className="admin-card-actions">
                           <button

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import FlashCardApp from './components/FlashCardApp';
 import AdminApp from './components/AdminApp';
 import Login from './components/Login';
+import Register from './components/Register';
 
 function ProtectedRoute({ children }) {
   return localStorage.getItem('token') ? children : <Navigate to="/login" replace />;
@@ -19,6 +20,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route
         path="/"
         element={
