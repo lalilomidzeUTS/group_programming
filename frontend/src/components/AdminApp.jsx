@@ -13,10 +13,13 @@ const AVATAR_COLORS = [
   { bg: '#4a2e3a', color: '#f87ec8' },
 ];
 
+// Splits on @ and whitespace to handle email addresses (e.g. "john@example.com" → "JE")
 function getInitials(name) {
   return name.split(/[@\s]+/).map((w) => w[0] || '').join('').toUpperCase().slice(0, 2) || '?';
 }
 
+// Cycles through AVATAR_COLORS using the user's position in the full list so
+// colors stay consistent even when the list is filtered by search
 function getAvatarColor(idx) {
   return AVATAR_COLORS[idx % AVATAR_COLORS.length];
 }
@@ -127,6 +130,9 @@ export default function AdminApp() {
     ? users.filter((u) => u.toLowerCase().includes(userSearch.toLowerCase()))
     : users;
 
+  // Pre-compute color for the selected user header to avoid calling getAvatarColor twice
+  const selectedUserColor = selectedUser ? getAvatarColor(users.indexOf(selectedUser)) : null;
+
   const editCount = userHistory.filter((h) => h.type === 'edit').length;
   const deleteCount = userHistory.filter((h) => h.type === 'delete').length;
 
@@ -135,31 +141,31 @@ export default function AdminApp() {
     if (events.length === 0) {
       return <div className="empty-state">No history recorded for this user.</div>;
     }
-    return events.map((h, i) => {
-      if (h.type === 'create') {
+    return events.map((event, i) => {
+      if (event.type === 'create') {
         return (
           <div key={i} className="history-item">
             <div className="history-row">
-              <div><h4>Card Created</h4><div className="history-date">{new Date(h.date).toLocaleString()}</div></div>
+              <div><h4>Card Created</h4><div className="history-date">{new Date(event.date).toLocaleString()}</div></div>
               <span className="hist-badge hb-create">Created</span>
             </div>
             <div className="history-detail det-create">
-              <div className="det-row"><span className="field-label ql">Q</span><span className="det-q">{h.q || ''}</span></div>
-              <div className="det-row"><span className="field-label al">A</span><span className="det-a">{h.a || ''}</span></div>
+              <div className="det-row"><span className="field-label q-label">Q</span><span className="det-q">{event.q || ''}</span></div>
+              <div className="det-row"><span className="field-label a-label">A</span><span className="det-a">{event.a || ''}</span></div>
             </div>
           </div>
         );
       }
-      if (h.type === 'delete') {
+      if (event.type === 'delete') {
         return (
           <div key={i} className="history-item">
             <div className="history-row">
-              <div><h4>Card Deleted</h4><div className="history-date">{new Date(h.date).toLocaleString()}</div></div>
+              <div><h4>Card Deleted</h4><div className="history-date">{new Date(event.date).toLocaleString()}</div></div>
               <span className="hist-badge hb-delete">Deleted</span>
             </div>
             <div className="history-detail det-delete">
-              <div className="det-row"><span className="field-label ql">Q</span><span className="det-q">{h.q || ''}</span></div>
-              <div className="det-row"><span className="field-label al">A</span><span className="det-a">{h.a || ''}</span></div>
+              <div className="det-row"><span className="field-label q-label">Q</span><span className="det-q">{event.q || ''}</span></div>
+              <div className="det-row"><span className="field-label a-label">A</span><span className="det-a">{event.a || ''}</span></div>
             </div>
           </div>
         );
@@ -167,16 +173,16 @@ export default function AdminApp() {
       return (
         <div key={i} className="history-item">
           <div className="history-row">
-            <div><h4>Card Edited</h4><div className="history-date">{new Date(h.date).toLocaleString()}</div></div>
+            <div><h4>Card Edited</h4><div className="history-date">{new Date(event.date).toLocaleString()}</div></div>
             <span className="hist-badge hb-edit">Edited</span>
           </div>
           <div className="history-detail det-edit">
             <div className="det-section-label">Before</div>
-            <div className="det-row"><span className="field-label ql">Q</span><span className="det-q">{h.oldQ || ''}</span></div>
-            <div className="det-row"><span className="field-label al">A</span><span className="det-a">{h.oldA || ''}</span></div>
+            <div className="det-row"><span className="field-label q-label">Q</span><span className="det-q">{event.oldQ || ''}</span></div>
+            <div className="det-row"><span className="field-label a-label">A</span><span className="det-a">{event.oldA || ''}</span></div>
             <div className="det-section-label">After</div>
-            <div className="det-row"><span className="field-label ql">Q</span><span className="det-q">{h.newQ || ''}</span></div>
-            <div className="det-row"><span className="field-label al">A</span><span className="det-a">{h.newA || ''}</span></div>
+            <div className="det-row"><span className="field-label q-label">Q</span><span className="det-q">{event.newQ || ''}</span></div>
+            <div className="det-row"><span className="field-label a-label">A</span><span className="det-a">{event.newA || ''}</span></div>
           </div>
         </div>
       );
@@ -216,21 +222,21 @@ export default function AdminApp() {
               <div className="no-users-msg">No users match your search.</div>
             ) : (
               filteredUsers.map((user) => {
-                const globalIdx = users.indexOf(user);
-                const ac = getAvatarColor(globalIdx);
+                const userIndex = users.indexOf(user);
+                const avatarColor = getAvatarColor(userIndex);
                 return (
                   <div
                     key={user}
                     className={`user-item${selectedUser === user ? ' active' : ''}`}
                     onClick={() => setSelectedUser(user)}
                   >
-                    <div className="user-avatar" style={{ background: ac.bg, color: ac.color }}>
+                    <div className="user-avatar" style={{ background: avatarColor.bg, color: avatarColor.color }}>
                       {getInitials(user)}
                     </div>
                     <div className="user-info">
-                      <div className="uname">{user}</div>
+                      <div className="user-name">{user}</div>
                       {selectedUser === user && (
-                        <div className="umeta">{flashcards.length} card{flashcards.length !== 1 ? 's' : ''}</div>
+                        <div className="user-meta">{flashcards.length} card{flashcards.length !== 1 ? 's' : ''}</div>
                       )}
                     </div>
                   </div>
@@ -250,21 +256,20 @@ export default function AdminApp() {
             <>
               <div className="user-header">
                 <div className="user-header-left">
-                  {(() => { const ac = getAvatarColor(users.indexOf(selectedUser)); return (
                   <div
                     className="user-header-avatar"
-                    style={{ background: ac.bg, color: ac.color }}
+                    style={{ background: selectedUserColor.bg, color: selectedUserColor.color }}
                   >
                     {getInitials(selectedUser)}
-                  </div>); })()}
+                  </div>
                   <div className="user-header-info">
                     <h2>{selectedUser}</h2>
                   </div>
                 </div>
                 <div className="stats-row">
-                  <div className="stat-box"><div className="snum">{flashcards.length}</div><div className="slbl">Cards</div></div>
-                  <div className="stat-box"><div className="snum">{editCount}</div><div className="slbl">Edits</div></div>
-                  <div className="stat-box"><div className="snum">{deleteCount}</div><div className="slbl">Deleted</div></div>
+                  <div className="stat-box"><div className="stat-number">{flashcards.length}</div><div className="stat-label">Cards</div></div>
+                  <div className="stat-box"><div className="stat-number">{editCount}</div><div className="stat-label">Edits</div></div>
+                  <div className="stat-box"><div className="stat-number">{deleteCount}</div><div className="stat-label">Deleted</div></div>
                 </div>
               </div>
 
@@ -306,8 +311,8 @@ export default function AdminApp() {
                         ) : (
                           <>
                             <div className="card-texts">
-                              <div className="card-field"><span className="field-label ql">Q</span><span className="card-q-text">{card.question}</span></div>
-                              <div className="card-field"><span className="field-label al">A</span><span className="card-a-text">{card.answer}</span></div>
+                              <div className="card-field"><span className="field-label q-label">Q</span><span className="card-q-text">{card.question}</span></div>
+                              <div className="card-field"><span className="field-label a-label">A</span><span className="card-a-text">{card.answer}</span></div>
                             </div>
                             <div className="card-actions">
                               <button className="btn-edit" onClick={() => startEdit(card)}>Edit</button>

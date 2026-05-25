@@ -77,7 +77,7 @@ async def db_get_flashcard(flashcard_id: str) -> Optional["Flashcard"]:
     collection = db[COLLECTION_NAME]
     data = await collection.find_one({"id": flashcard_id})
     if data:
-        data.pop("_id", None)
+        data.pop("_id", None)  # MongoDB auto-adds _id; remove it before mapping to our schema
         return Flashcard.from_dict(data)
     return None
 
@@ -89,7 +89,7 @@ async def db_get_flashcards(user_id: str = None, skip: int = 0, limit: int = 100
     cursor = collection.find(query).skip(skip).limit(limit)
     flashcards = []
     async for data in cursor:
-        data.pop("_id", None)
+        data.pop("_id", None)  # MongoDB auto-adds _id; remove it before mapping to our schema
         flashcards.append(Flashcard.from_dict(data))
     return flashcards
 

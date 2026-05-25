@@ -184,7 +184,7 @@ body {
   flex: 1;
 }
  
-.user-info .uname {
+.user-info .user-name {
   font-size: 13px;
   font-weight: bold;
   color: #fff;
@@ -193,13 +193,13 @@ body {
   text-overflow: ellipsis;
 }
  
-.user-info .umeta {
+.user-info .user-meta {
   font-size: 11px;
   color: #6a6b99;
   margin-top: 2px;
 }
  
-.user-item.active .uname {
+.user-item.active .user-name {
   color: #c8caff;
 }
  
@@ -284,13 +284,13 @@ body {
   min-width: 70px;
 }
  
-.stat-box .snum {
+.stat-box .stat-number {
   font-size: 18px;
   font-weight: bold;
   color: #fff;
 }
  
-.stat-box .slbl {
+.stat-box .stat-label {
   font-size: 10px;
   color: #6a6b99;
   text-transform: uppercase;
@@ -391,8 +391,8 @@ body {
   line-height: 1.6;
 }
 
-.content .ql { background: #3f4278; color: #b0b3e8; }
-.content .al { background: #2e3a2e; color: #7ec87e; }
+.content .q-label { background: #3f4278; color: #b0b3e8; }
+.content .a-label { background: #2e3a2e; color: #7ec87e; }
 
 .content .card-q-text { font-size: 14px; color: #fff; word-break: break-word; }
 .content .card-a-text { font-size: 13px; color: #9a9de0; word-break: break-word; }

@@ -567,8 +567,8 @@ body {
     margin-right: 5px;
 }
 
-.app-wrapper .detail-label.ql { color: #9a9de0; }
-.app-wrapper .detail-label.al { color: #5a9e5a; }
+.app-wrapper .detail-label.q-label { color: #9a9de0; }
+.app-wrapper .detail-label.a-label { color: #5a9e5a; }
  
 .toast {
     position: fixed;

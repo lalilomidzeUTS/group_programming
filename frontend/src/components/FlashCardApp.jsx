@@ -96,6 +96,7 @@ export default function FlashCardApp() {
       } catch { showToast('Could not reach the server.'); }
     } else {
       try {
+        // Timestamp string used as a simple unique ID; the backend stores it as-is
         const newId = Date.now().toString();
         const res = await fetch(`${API_URL}/flashcards`, {
           method: 'POST',
@@ -134,11 +135,11 @@ export default function FlashCardApp() {
   };
 
   const filteredCards = flashcards.filter((card) => {
-    const s = searchQuery.toLowerCase();
-    return card.question.toLowerCase().includes(s) || card.answer.toLowerCase().includes(s);
+    const query = searchQuery.toLowerCase();
+    return card.question.toLowerCase().includes(query) || card.answer.toLowerCase().includes(query);
   });
 
-  // Study mode
+  // Study mode progresses through three phases: idle → session → done
   const startStudy = () => {
     if (flashcards.length === 0) return;
     setStudyCards([...flashcards]);
@@ -161,49 +162,49 @@ export default function FlashCardApp() {
       return <div className="empty-state">No activity yet.</div>;
     }
 
-    return events.map((h, i) => {
-      if (h.type === 'create') {
+    return events.map((event, i) => {
+      if (event.type === 'create') {
         return (
           <div key={i} className="history-item">
             <div className="history-item-row">
-              <div><h4>Card Created</h4><p className="history-date">{new Date(h.date).toLocaleString()}</p></div>
+              <div><h4>Card Created</h4><p className="history-date">{new Date(event.date).toLocaleString()}</p></div>
               <span className="history-badge badge-create">Created</span>
             </div>
             <div className="history-card-detail detail-create">
-              <div className="detail-q"><span className="detail-label ql">Q</span>{h.q}</div>
-              <div className="detail-a"><span className="detail-label al">A</span>{h.a}</div>
+              <div className="detail-q"><span className="detail-label q-label">Q</span>{event.q}</div>
+              <div className="detail-a"><span className="detail-label a-label">A</span>{event.a}</div>
             </div>
           </div>
         );
       }
-      if (h.type === 'delete') {
+      if (event.type === 'delete') {
         return (
           <div key={i} className="history-item">
             <div className="history-item-row">
-              <div><h4>Card Deleted</h4><p className="history-date">{new Date(h.date).toLocaleString()}</p></div>
+              <div><h4>Card Deleted</h4><p className="history-date">{new Date(event.date).toLocaleString()}</p></div>
               <span className="history-badge badge-delete">Deleted</span>
             </div>
             <div className="history-card-detail detail-delete">
-              <div className="detail-q"><span className="detail-label ql">Q</span>{h.q}</div>
-              <div className="detail-a"><span className="detail-label al">A</span>{h.a}</div>
+              <div className="detail-q"><span className="detail-label q-label">Q</span>{event.q}</div>
+              <div className="detail-a"><span className="detail-label a-label">A</span>{event.a}</div>
             </div>
           </div>
         );
       }
-      if (h.type === 'edit') {
+      if (event.type === 'edit') {
         return (
           <div key={i} className="history-item">
             <div className="history-item-row">
-              <div><h4>Card Edited</h4><p className="history-date">{new Date(h.date).toLocaleString()}</p></div>
+              <div><h4>Card Edited</h4><p className="history-date">{new Date(event.date).toLocaleString()}</p></div>
               <span className="history-badge badge-edit">Edited</span>
             </div>
             <div className="history-card-detail detail-edit">
               <div className="detail-section-label">Before</div>
-              <div className="detail-q"><span className="detail-label ql">Q</span>{h.oldQ}</div>
-              <div className="detail-a"><span className="detail-label al">A</span>{h.oldA}</div>
+              <div className="detail-q"><span className="detail-label q-label">Q</span>{event.oldQ}</div>
+              <div className="detail-a"><span className="detail-label a-label">A</span>{event.oldA}</div>
               <div className="detail-section-label">After</div>
-              <div className="detail-q"><span className="detail-label ql">Q</span>{h.newQ}</div>
-              <div className="detail-a"><span className="detail-label al">A</span>{h.newA}</div>
+              <div className="detail-q"><span className="detail-label q-label">Q</span>{event.newQ}</div>
+              <div className="detail-a"><span className="detail-label a-label">A</span>{event.newA}</div>
             </div>
           </div>
         );

@@ -222,7 +222,7 @@ async def get_all_flashcards(
     limit: int = 100,
     current_user: dict = Depends(get_current_user),
 ):
-    # Regular users only see their own cards
+    # Passing None to db_get_flashcards omits the user_id filter, returning all cards (admin only)
     user_filter = None if current_user["role"] == "admin" else current_user["username"]
     flashcards = await db_get_flashcards(user_id=user_filter, skip=skip, limit=limit)
     return [FlashcardSchema(**fc.to_dict()) for fc in flashcards]
@@ -258,6 +258,7 @@ async def update_flashcard(
     updated_object: FlashcardSchema,
     current_user: dict = Depends(get_current_user),
 ):
+    # None bypasses ownership check in the DB layer, allowing admins to edit any card
     owner_filter = None if current_user["role"] == "admin" else current_user["username"]
     old_card = await db_get_flashcard(flashcard_id)
     fc = Flashcard(
@@ -270,6 +271,7 @@ async def update_flashcard(
     db_flashcard = await db_update_flashcard(flashcard_id, fc, user_id=owner_filter)
     if not db_flashcard:
         raise HTTPException(status_code=404, detail="Flashcard not found")
+    # Only log an edit event if the question or answer actually changed (ignore flip-only updates)
     if old_card and (old_card.question != updated_object.question or old_card.answer != updated_object.answer):
         await db_log_history({
             "type": "edit",
