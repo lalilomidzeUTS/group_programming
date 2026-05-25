@@ -22,6 +22,8 @@ from flashcard_crud import (
     db_update_flashcard,
     db_delete_flashcard,
     db_get_all_users,
+    db_log_history,
+    db_get_history,
 )
 
 load_dotenv()
@@ -224,9 +226,17 @@ async def create_flashcard(
         question=flashcard.question,
         answer=flashcard.answer,
         isFlipped=flashcard.isFlipped,
-        user_id=current_user["username"],  # always stamped from the token
+        user_id=current_user["username"],
     )
     created = await db_create_flashcard(fc)
+    await db_log_history({
+        "type": "create",
+        "user_id": current_user["username"],
+        "cardId": flashcard.id,
+        "date": datetime.now(timezone.utc).isoformat(),
+        "q": flashcard.question,
+        "a": flashcard.answer,
+    })
     return FlashcardSchema(**created.to_dict())
 
 
@@ -236,8 +246,8 @@ async def update_flashcard(
     updated_object: FlashcardSchema,
     current_user: dict = Depends(get_current_user),
 ):
-    # Admins can update any card; users only their own
     owner_filter = None if current_user["role"] == "admin" else current_user["username"]
+    old_card = await db_get_flashcard(flashcard_id)
     fc = Flashcard(
         id=updated_object.id,
         question=updated_object.question,
@@ -248,6 +258,17 @@ async def update_flashcard(
     db_flashcard = await db_update_flashcard(flashcard_id, fc, user_id=owner_filter)
     if not db_flashcard:
         raise HTTPException(status_code=404, detail="Flashcard not found")
+    if old_card and (old_card.question != updated_object.question or old_card.answer != updated_object.answer):
+        await db_log_history({
+            "type": "edit",
+            "user_id": old_card.user_id,
+            "cardId": flashcard_id,
+            "date": datetime.now(timezone.utc).isoformat(),
+            "oldQ": old_card.question,
+            "oldA": old_card.answer,
+            "newQ": updated_object.question,
+            "newA": updated_object.answer,
+        })
     return FlashcardSchema(**db_flashcard.to_dict())
 
 
@@ -272,12 +293,25 @@ async def delete_flashcard(
     flashcard_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    # Admins can delete any card; users only their own
     owner_filter = None if current_user["role"] == "admin" else current_user["username"]
+    card = await db_get_flashcard(flashcard_id)
     success = await db_delete_flashcard(flashcard_id, user_id=owner_filter)
     if not success:
         raise HTTPException(status_code=404, detail="Flashcard not found")
+    if card:
+        await db_log_history({
+            "type": "delete",
+            "user_id": card.user_id,
+            "cardId": flashcard_id,
+            "date": datetime.now(timezone.utc).isoformat(),
+            "q": card.question,
+            "a": card.answer,
+        })
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@app.get("/history")
+async def get_history(current_user: dict = Depends(get_current_user)):
+    return await db_get_history(current_user["username"])
 
 ############################################
 # --- Admin Endpoints ---
@@ -286,6 +320,14 @@ async def delete_flashcard(
 @app.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(require_admin)):
     return await db_get_all_users()
+
+
+@app.get("/admin/users/{user_id}/history")
+async def get_user_history(
+    user_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    return await db_get_history(user_id)
 
 
 @app.get("/admin/users/{user_id}/flashcards", response_model=List[FlashcardSchema])

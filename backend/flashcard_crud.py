@@ -12,18 +12,21 @@ MONGODB_URL = os.getenv("MONGODB_URL")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME")
 USERS_COLLECTION_NAME = os.getenv("USERS_COLLECTION_NAME")
+HISTORY_COLLECTION_NAME = os.getenv("HISTORY_COLLECTION_NAME", "history")
 
 client: AsyncIOMotorClient = None
 db = None
 users_collection = None
+history_collection = None
 
 
 async def connect_to_mongo():
-    global client, db, users_collection
+    global client, db, users_collection, history_collection
     client = AsyncIOMotorClient(MONGODB_URL, tlsCAFile=certifi.where())
     db = client[DATABASE_NAME]
     await db[COLLECTION_NAME].create_index([("id", ASCENDING)], unique=True)
     users_collection = db[USERS_COLLECTION_NAME]
+    history_collection = db[HISTORY_COLLECTION_NAME]
     print(f"Connected to MongoDB: {DATABASE_NAME}")
 
 
@@ -111,6 +114,17 @@ async def db_delete_flashcard(flashcard_id: str, user_id: str = None) -> bool:
         query["user_id"] = user_id
     result = await collection.delete_one(query)
     return result.deleted_count > 0
+
+
+async def db_log_history(event: dict) -> None:
+    await history_collection.insert_one(event)
+
+
+async def db_get_history(user_id: str) -> List[dict]:
+    events = []
+    async for doc in history_collection.find({"user_id": user_id}, {"_id": 0}).sort("date", -1):
+        events.append(doc)
+    return events
 
 
 async def db_get_all_users() -> List[str]:

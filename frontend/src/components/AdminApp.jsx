@@ -1,9 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Check, X, Edit2 } from 'lucide-react';
 import './AdminApp.css';
 
 const API_URL = 'http://localhost:8000';
+
+const AVATAR_COLORS = [
+  { bg: '#3f4278', color: '#c8caff' },
+  { bg: '#2e3a2e', color: '#7ec87e' },
+  { bg: '#3a2e4a', color: '#c87ef8' },
+  { bg: '#2e3a4a', color: '#7ec8f8' },
+  { bg: '#4a3a2e', color: '#f8c87e' },
+  { bg: '#4a2e3a', color: '#f87ec8' },
+];
+
+function getInitials(name) {
+  return name.split(/[@\s]+/).map((w) => w[0] || '').join('').toUpperCase().slice(0, 2) || '?';
+}
+
+function getAvatarColor(idx) {
+  return AVATAR_COLORS[idx % AVATAR_COLORS.length];
+}
 
 export default function AdminApp() {
   const [users, setUsers] = useState([]);
@@ -12,51 +28,52 @@ export default function AdminApp() {
   const [editingId, setEditingId] = useState(null);
   const [editQuestion, setEditQuestion] = useState('');
   const [editAnswer, setEditAnswer] = useState('');
+  const [userSearch, setUserSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('flashcards');
+  const [userHistory, setUserHistory] = useState([]);
+  const [toast, setToast] = useState({ message: '', visible: false });
+  const toastTimer = useRef(null);
 
   const token = localStorage.getItem('token');
-  const username = localStorage.getItem('username');
   const navigate = useNavigate();
-
   const authHeaders = { Authorization: `Bearer ${token}` };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  useEffect(() => { fetchUsers(); }, []);
 
   useEffect(() => {
-    if (selectedUser) fetchFlashcards(selectedUser);
+    if (selectedUser) {
+      fetchFlashcards(selectedUser);
+      fetchUserHistory(selectedUser);
+      setActiveTab('flashcards');
+      setEditingId(null);
+    }
   }, [selectedUser]);
+
+  const showToast = (msg) => {
+    setToast({ message: msg, visible: true });
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2400);
+  };
+
+  const fetchUserHistory = async (userId) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/users/${encodeURIComponent(userId)}/history`, { headers: authHeaders });
+      if (res.ok) setUserHistory(await res.json());
+    } catch { /* silently ignore */ }
+  };
 
   const fetchUsers = async () => {
     try {
       const res = await fetch(`${API_URL}/admin/users`, { headers: authHeaders });
-      const data = await res.json();
-      setUsers(data);
-    } catch {
-      alert('Failed to load users.');
-    }
+      setUsers(await res.json());
+    } catch { alert('Failed to load users.'); }
   };
 
   const fetchFlashcards = async (userId) => {
     try {
       const res = await fetch(`${API_URL}/admin/users/${encodeURIComponent(userId)}/flashcards`, { headers: authHeaders });
-      const data = await res.json();
-      setFlashcards(data);
-    } catch {
-      alert('Failed to load flashcards.');
-    }
-  };
-
-  const flipCard = async (id) => {
-    try {
-      const res = await fetch(`${API_URL}/flashcards/${id}/flip`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-      });
-      if (res.ok) fetchFlashcards(selectedUser);
-    } catch {
-      alert('Failed to flip card.');
-    }
+      setFlashcards(await res.json());
+    } catch { alert('Failed to load flashcards.'); }
   };
 
   const startEdit = (card) => {
@@ -76,10 +93,9 @@ export default function AdminApp() {
       if (res.ok) {
         fetchFlashcards(selectedUser);
         setEditingId(null);
+        showToast('Card updated');
       }
-    } catch {
-      alert('Failed to save edit.');
-    }
+    } catch { alert('Failed to save edit.'); }
   };
 
   const deleteCard = async (id) => {
@@ -90,10 +106,11 @@ export default function AdminApp() {
         method: 'DELETE',
         headers: authHeaders,
       });
-      if (res.ok) fetchFlashcards(selectedUser);
-    } catch {
-      alert('Failed to delete card.');
-    }
+      if (res.ok) {
+        fetchFlashcards(selectedUser);
+        showToast('Card deleted');
+      }
+    } catch { alert('Failed to delete card.'); }
   };
 
   const handleLogout = () => {
@@ -103,114 +120,217 @@ export default function AdminApp() {
     navigate('/login', { replace: true });
   };
 
-  return (
-    <div className="admin-container">
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar-header">
-          <h2 className="admin-sidebar-title">Users</h2>
-          <button className="admin-logout-btn" onClick={handleLogout}>Logout</button>
-        </div>
-        <ul className="admin-user-list">
-          {users.map((user) => (
-            <li
-              key={user}
-              className={`admin-user-item ${selectedUser === user ? 'active' : ''}`}
-              onClick={() => { setSelectedUser(user); setEditingId(null); }}
-            >
-              <span className="admin-user-name">{user}</span>
-              {user === username && <span className="admin-you-badge">you</span>}
-            </li>
-          ))}
-        </ul>
-      </aside>
+  const filteredUsers = userSearch
+    ? users.filter((u) => u.toLowerCase().includes(userSearch.toLowerCase()))
+    : users;
 
-      <main className="admin-main">
-        {!selectedUser ? (
-          <div className="admin-empty">
-            <p>Select a user from the sidebar to view their flashcards.</p>
-          </div>
-        ) : (
-          <>
-            <div className="admin-main-header">
-              <h2 className="admin-main-title">{selectedUser}</h2>
-              <span className="admin-card-count">{flashcards.length} card{flashcards.length !== 1 ? 's' : ''}</span>
+  const editCount = userHistory.filter((h) => h.type === 'edit').length;
+  const deleteCount = userHistory.filter((h) => h.type === 'delete').length;
+
+  const renderHistoryTab = () => {
+    const events = userHistory.filter((h) => ['create', 'edit', 'delete'].includes(h.type)).slice().reverse();
+    if (events.length === 0) {
+      return <div className="empty-state">No history recorded for this user.</div>;
+    }
+    return events.map((h, i) => {
+      if (h.type === 'create') {
+        return (
+          <div key={i} className="history-item">
+            <div className="history-row">
+              <div><h4>Card Created</h4><div className="history-date">{new Date(h.date).toLocaleString()}</div></div>
+              <span className="hist-badge hb-create">Created</span>
             </div>
+            <div className="history-detail det-create">
+              <div className="det-row"><span className="field-label ql">Q</span><span className="det-q">{h.q || ''}</span></div>
+              <div className="det-row"><span className="field-label al">A</span><span className="det-a">{h.a || ''}</span></div>
+            </div>
+          </div>
+        );
+      }
+      if (h.type === 'delete') {
+        return (
+          <div key={i} className="history-item">
+            <div className="history-row">
+              <div><h4>Card Deleted</h4><div className="history-date">{new Date(h.date).toLocaleString()}</div></div>
+              <span className="hist-badge hb-delete">Deleted</span>
+            </div>
+            <div className="history-detail det-delete">
+              <div className="det-row"><span className="field-label ql">Q</span><span className="det-q">{h.q || ''}</span></div>
+              <div className="det-row"><span className="field-label al">A</span><span className="det-a">{h.a || ''}</span></div>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div key={i} className="history-item">
+          <div className="history-row">
+            <div><h4>Card Edited</h4><div className="history-date">{new Date(h.date).toLocaleString()}</div></div>
+            <span className="hist-badge hb-edit">Edited</span>
+          </div>
+          <div className="history-detail det-edit">
+            <div className="det-section-label">Before</div>
+            <div className="det-row"><span className="field-label ql">Q</span><span className="det-q">{h.oldQ || ''}</span></div>
+            <div className="det-row"><span className="field-label al">A</span><span className="det-a">{h.oldA || ''}</span></div>
+            <div className="det-section-label">After</div>
+            <div className="det-row"><span className="field-label ql">Q</span><span className="det-q">{h.newQ || ''}</span></div>
+            <div className="det-row"><span className="field-label al">A</span><span className="det-a">{h.newA || ''}</span></div>
+          </div>
+        </div>
+      );
+    });
+  };
 
-            {flashcards.length === 0 ? (
-              <div className="admin-empty">
-                <p>This user has no flashcards yet.</p>
-              </div>
+  return (
+    <>
+      <div className="topbar">
+        <div className="topbar-left">
+          <h1>KL <span>Admin Dashboard</span></h1>
+          <p>Manage all registered users and their flashcards</p>
+        </div>
+        <div className="topbar-right">
+          <span className="admin-badge">● ADMIN</span>
+          <button
+            onClick={handleLogout}
+            style={{ background: 'none', border: '1px solid #4f517d', color: '#9a9de0', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Verdana, sans-serif' }}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <div className="dashboard">
+        <div className="sidebar">
+          <div className="sidebar-head">
+            <h2>Registered Users</h2>
+            <input
+              type="text"
+              className="user-search"
+              placeholder="Search users..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+            />
+            <div className="user-count">{users.length} user{users.length !== 1 ? 's' : ''} registered</div>
+          </div>
+          <div className="user-list">
+            {users.length === 0 ? (
+              <div className="no-users-msg">No users registered yet.<br />They appear here once someone uses the app.</div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="no-users-msg">No users match your search.</div>
             ) : (
-              <ul className="admin-card-list">
-                {flashcards.map((card) => (
-                  <li key={card.id} className="admin-card-item">
-                    {editingId === card.id ? (
-                      <div className="admin-edit-mode">
-                        <div className="admin-edit-inputs">
-                          <input
-                            type="text"
-                            value={editQuestion}
-                            onChange={(e) => setEditQuestion(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingId(null); }}
-                            placeholder="Question"
-                            className="admin-edit-input"
-                            autoFocus
-                          />
-                          <input
-                            type="text"
-                            value={editAnswer}
-                            onChange={(e) => setEditAnswer(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingId(null); }}
-                            placeholder="Answer"
-                            className="admin-edit-input"
-                          />
-                        </div>
-                        <button onClick={saveEdit} className="admin-icon-btn save"><Check size={18} /></button>
-                        <button onClick={() => setEditingId(null)} className="admin-icon-btn cancel"><X size={18} /></button>
-                      </div>
-                    ) : (
-                      <>
-                        <div
-                          className="admin-flashcard"
-                          onClick={() => flipCard(card.id)}
-                        >
-                          {card.isFlipped ? (
-                            <div className="admin-flashcard-back">
-                              <span className="admin-flashcard-label">Answer</span>
-                              <p className="admin-flashcard-text">{card.answer}</p>
-                            </div>
-                          ) : (
-                            <div className="admin-flashcard-front">
-                              <span className="admin-flashcard-label">Question</span>
-                              <p className="admin-flashcard-text">{card.question}</p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="admin-card-actions">
-                          <button
-                            onClick={() => startEdit(card)}
-                            className="admin-icon-btn edit"
-                            disabled={editingId !== null}
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            onClick={() => deleteCard(card.id)}
-                            className="admin-icon-btn delete"
-                            disabled={editingId !== null}
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
+              filteredUsers.map((user) => {
+                const globalIdx = users.indexOf(user);
+                const ac = getAvatarColor(globalIdx);
+                return (
+                  <div
+                    key={user}
+                    className={`user-item${selectedUser === user ? ' active' : ''}`}
+                    onClick={() => setSelectedUser(user)}
+                  >
+                    <div className="user-avatar" style={{ background: ac.bg, color: ac.color }}>
+                      {getInitials(user)}
+                    </div>
+                    <div className="user-info">
+                      <div className="uname">{user}</div>
+                      {selectedUser === user && (
+                        <div className="umeta">{flashcards.length} card{flashcards.length !== 1 ? 's' : ''}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
             )}
-          </>
-        )}
-      </main>
-    </div>
+          </div>
+        </div>
+
+        <div className="main">
+          {!selectedUser ? (
+            <div className="no-user">
+              <div className="icon">👤</div>
+              <p>Select a user to manage their flashcards</p>
+            </div>
+          ) : (
+            <>
+              <div className="user-header">
+                <div className="user-header-left">
+                  <div
+                    className="user-header-avatar"
+                    style={{
+                      background: getAvatarColor(users.indexOf(selectedUser)).bg,
+                      color: getAvatarColor(users.indexOf(selectedUser)).color,
+                    }}
+                  >
+                    {getInitials(selectedUser)}
+                  </div>
+                  <div className="user-header-info">
+                    <h2>{selectedUser}</h2>
+                  </div>
+                </div>
+                <div className="stats-row">
+                  <div className="stat-box"><div className="snum">{flashcards.length}</div><div className="slbl">Cards</div></div>
+                  <div className="stat-box"><div className="snum">{editCount}</div><div className="slbl">Edits</div></div>
+                  <div className="stat-box"><div className="snum">{deleteCount}</div><div className="slbl">Deleted</div></div>
+                </div>
+              </div>
+
+              <div className="tabs">
+                <button className={`tab-btn${activeTab === 'flashcards' ? ' active' : ''}`} onClick={() => setActiveTab('flashcards')}>Flashcards</button>
+                <button className={`tab-btn${activeTab === 'history' ? ' active' : ''}`} onClick={() => { setActiveTab('history'); fetchUserHistory(selectedUser); }}>History</button>
+              </div>
+
+              <div className="content">
+                {activeTab === 'flashcards' && (
+                  flashcards.length === 0 ? (
+                    <div className="empty-state">No flashcards for this user.</div>
+                  ) : (
+                    flashcards.map((card) => (
+                      <div key={card.id} className={`card-item${editingId === card.id ? ' editing' : ''}`}>
+                        {editingId === card.id ? (
+                          <>
+                            <div className="card-texts">
+                              <input
+                                className="inline-edit-input"
+                                value={editQuestion}
+                                onChange={(e) => setEditQuestion(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('adminEditAnswer').focus(); }}
+                                autoFocus
+                              />
+                              <input
+                                id="adminEditAnswer"
+                                className="inline-edit-input"
+                                value={editAnswer}
+                                onChange={(e) => setEditAnswer(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingId(null); }}
+                              />
+                            </div>
+                            <div className="card-actions">
+                              <button className="btn-save" onClick={saveEdit}>Save</button>
+                              <button className="btn-cancel-edit" onClick={() => setEditingId(null)}>✕</button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="card-texts">
+                              <div className="card-field"><span className="field-label ql">Q</span><span className="card-q-text">{card.question}</span></div>
+                              <div className="card-field"><span className="field-label al">A</span><span className="card-a-text">{card.answer}</span></div>
+                            </div>
+                            <div className="card-actions">
+                              <button className="btn-edit" onClick={() => startEdit(card)}>Edit</button>
+                              <button className="btn-del" onClick={() => deleteCard(card.id)}>Delete</button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))
+                  )
+                )}
+                {activeTab === 'history' && renderHistoryTab()}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className={`toast${toast.visible ? ' show' : ''}`}>{toast.message}</div>
+    </>
   );
 }
