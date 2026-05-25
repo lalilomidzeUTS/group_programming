@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './FlashCardApp.css';
 import { API_URL } from '../config';
-import { getErrorMessage, logout } from '../utils';
+import { handleError, logout } from '../utils';
 
 export default function FlashCardApp() {
   const [token] = useState(localStorage.getItem('token'));
@@ -33,6 +33,7 @@ export default function FlashCardApp() {
 
   useEffect(() => { fetchFlashcards(); }, []);
   useEffect(() => { document.title = `Flashcards (${flashcards.length} cards)`; }, [flashcards]);
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const showToast = (msg) => {
     setToast({ message: msg, visible: true });
@@ -46,7 +47,7 @@ export default function FlashCardApp() {
     try {
       const res = await fetch(`${API_URL}/history`, { headers: authHeaders });
       if (res.ok) setHistory(await res.json());
-      else showToast(await getErrorMessage(res));
+      else await handleError(res, navigate, showToast);
     } catch { showToast('Could not reach the server.'); }
   };
 
@@ -58,7 +59,7 @@ export default function FlashCardApp() {
         setFlashcards(await res.json());
       } else {
         setFlashcards([]);
-        showToast(await getErrorMessage(res));
+        await handleError(res, navigate, showToast);
       }
     } catch {
       setFlashcards([]);
@@ -82,7 +83,7 @@ export default function FlashCardApp() {
           body: JSON.stringify({ ...card, question: q, answer: a }),
         });
         if (res.ok) { cancelEdit(); fetchFlashcards(); showToast('Card updated'); }
-        else showToast(await getErrorMessage(res));
+        else await handleError(res, navigate, showToast);
       } catch { showToast('Could not reach the server.'); }
     } else {
       try {
@@ -94,7 +95,7 @@ export default function FlashCardApp() {
           body: JSON.stringify({ id: newId, question: q, answer: a, isFlipped: false }),
         });
         if (res.ok) { setQuestionInput(''); setAnswerInput(''); fetchFlashcards(); showToast('Card added'); }
-        else showToast(await getErrorMessage(res));
+        else await handleError(res, navigate, showToast);
       } catch { showToast('Could not reach the server.'); }
     }
   };
@@ -113,6 +114,8 @@ export default function FlashCardApp() {
   };
 
   const deleteFlashcard = async (id) => {
+    const card = flashcards.find((c) => c.id === id);
+    if (!window.confirm(`Delete "${card.question}"?`)) return;
     if (editingId === id) cancelEdit();
     try {
       const res = await fetch(`${API_URL}/flashcards/${id}`, {
@@ -120,7 +123,7 @@ export default function FlashCardApp() {
         headers: authHeaders,
       });
       if (res.ok) { fetchFlashcards(); showToast('Card deleted'); }
-      else showToast(await getErrorMessage(res));
+      else await handleError(res, navigate, showToast);
     } catch { showToast('Could not reach the server.'); }
   };
 

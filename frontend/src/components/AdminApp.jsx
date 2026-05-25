@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminApp.css';
 import { API_URL } from '../config';
-import { getErrorMessage, logout } from '../utils';
+import { handleError, logout } from '../utils';
 
 const AVATAR_COLORS = [
   { bg: '#3f4278', color: '#c8caff' },
@@ -26,6 +26,7 @@ function getAvatarColor(idx) {
 
 export default function AdminApp() {
   const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -42,13 +43,16 @@ export default function AdminApp() {
   const authHeaders = { Authorization: `Bearer ${token}` };
 
   useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   useEffect(() => {
     if (selectedUser) {
-      fetchFlashcards(selectedUser);
-      fetchUserHistory(selectedUser);
+      setFlashcards([]);
+      setUserHistory([]);
       setActiveTab('flashcards');
       setEditingId(null);
+      fetchFlashcards(selectedUser);
+      fetchUserHistory(selectedUser);
     }
   }, [selectedUser]);
 
@@ -62,23 +66,25 @@ export default function AdminApp() {
     try {
       const res = await fetch(`${API_URL}/admin/users/${encodeURIComponent(userId)}/history`, { headers: authHeaders });
       if (res.ok) setUserHistory(await res.json());
-      else showToast(await getErrorMessage(res));
+      else await handleError(res, navigate, showToast);
     } catch { showToast('Could not reach the server.'); }
   };
 
   const fetchUsers = async () => {
     try {
+      setLoadingUsers(true);
       const res = await fetch(`${API_URL}/admin/users`, { headers: authHeaders });
       if (res.ok) setUsers(await res.json());
-      else showToast(await getErrorMessage(res));
+      else await handleError(res, navigate, showToast);
     } catch { showToast('Could not reach the server.'); }
+    finally { setLoadingUsers(false); }
   };
 
   const fetchFlashcards = async (userId) => {
     try {
       const res = await fetch(`${API_URL}/admin/users/${encodeURIComponent(userId)}/flashcards`, { headers: authHeaders });
       if (res.ok) setFlashcards(await res.json());
-      else showToast(await getErrorMessage(res));
+      else await handleError(res, navigate, showToast);
     } catch { showToast('Could not reach the server.'); }
   };
 
@@ -97,7 +103,7 @@ export default function AdminApp() {
         body: JSON.stringify({ ...card, question: editQuestion.trim(), answer: editAnswer.trim() }),
       });
       if (res.ok) { fetchFlashcards(selectedUser); setEditingId(null); showToast('Card updated'); }
-      else showToast(await getErrorMessage(res));
+      else await handleError(res, navigate, showToast);
     } catch { showToast('Could not reach the server.'); }
   };
 
@@ -110,7 +116,7 @@ export default function AdminApp() {
         headers: authHeaders,
       });
       if (res.ok) { fetchFlashcards(selectedUser); showToast('Card deleted'); }
-      else showToast(await getErrorMessage(res));
+      else await handleError(res, navigate, showToast);
     } catch { showToast('Could not reach the server.'); }
   };
 
@@ -206,7 +212,9 @@ export default function AdminApp() {
             <div className="user-count">{users.length} user{users.length !== 1 ? 's' : ''} registered</div>
           </div>
           <div className="user-list">
-            {users.length === 0 ? (
+            {loadingUsers ? (
+              <div className="no-users-msg">Loading users...</div>
+            ) : users.length === 0 ? (
               <div className="no-users-msg">No users registered yet.<br />They appear here once someone uses the app.</div>
             ) : filteredUsers.length === 0 ? (
               <div className="no-users-msg">No users match your search.</div>
@@ -265,7 +273,7 @@ export default function AdminApp() {
 
               <div className="tabs">
                 <button className={`tab-btn${activeTab === 'flashcards' ? ' active' : ''}`} onClick={() => setActiveTab('flashcards')}>Flashcards</button>
-                <button className={`tab-btn${activeTab === 'history' ? ' active' : ''}`} onClick={() => { setActiveTab('history'); fetchUserHistory(selectedUser); }}>History</button>
+                <button className={`tab-btn${activeTab === 'history' ? ' active' : ''}`} onClick={() => setActiveTab('history')}>History</button>
               </div>
 
               <div className="content">
